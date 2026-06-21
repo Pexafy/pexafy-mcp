@@ -1,0 +1,39 @@
+# Pexafy's OWN production deployment of this server (HTTP transport behind Caddy).
+# It is NOT a generic, run-anywhere compose: it joins the external `pexafy_net`
+# network and talks to the Pexafy API/Django over internal hostnames. Use it as a
+# reference for your own deployment, not as a drop-in `docker compose up`.
+services:
+  mcp:
+    build: .
+    image: pexafy-mcp
+    container_name: pexafy_mcp
+    restart: unless-stopped
+    networks:
+      - pexafy_net
+    ports:
+      # Exposed on localhost only; Caddy (host) reverse-proxies mcp.pexafy.com → here.
+      - "127.0.0.1:8765:8765"
+    environment:
+      PEXAFY_MCP_TRANSPORT: http
+      PEXAFY_MCP_HOST: 0.0.0.0
+      PEXAFY_MCP_PORT: "8765"
+      # Reach the API over the internal Docker network (no Cloudflare round-trip).
+      PEXAFY_API_BASE_URL: http://search_api_instance:8000
+      PEXAFY_SOURCE: MCP-Agent
+      # No server API key: per-user auth — each MCP client passes its own Pexafy key.
+      # OAuth Resource Server: engages only when MCP_RESOLVE_SECRET is set (see .env).
+      # Resolve endpoint = Django on the internal network; AS + public URLs = prod domains.
+      PEXAFY_OAUTH_RESOLVE_URL: ${PEXAFY_OAUTH_RESOLVE_URL:-http://pexafy-django:8001/oauth/mcp/resolve}
+      PEXAFY_OAUTH_AS_URL: ${PEXAFY_OAUTH_AS_URL:-https://pexafy.com}
+      PEXAFY_MCP_PUBLIC_URL: ${PEXAFY_MCP_PUBLIC_URL:-https://mcp.pexafy.com}
+      MCP_RESOLVE_SECRET: ${MCP_RESOLVE_SECRET:-}
+      # Inline image previews (3.5): engage only when BOTH are set (see .env).
+      # THUMB_HMAC_SECRET must equal the Pexafy THUMB_HMAC_SECRET so signed thumb
+      # URLs validate. Without these, previews degrade off cleanly.
+      PEXAFY_THUMB_BASE_URL: ${PEXAFY_THUMB_BASE_URL:-}
+      PEXAFY_THUMB_HMAC_SECRET: ${PEXAFY_THUMB_HMAC_SECRET:-}
+
+# The Pexafy stack already created this network (the main pexafy compose file).
+networks:
+  pexafy_net:
+    external: true

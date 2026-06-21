@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pexafy-mcp"
+version = "0.2.0"
+description = "MCP server exposing Pexafy image search (text, by-image-URL, similar) to any MCP client."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Pexafy" }]
+keywords = ["mcp", "model-context-protocol", "pexafy", "image-search", "stock-photos"]
+dependencies = [
+    "fastmcp>=3.4",       # generates the MCP server from the Pexafy OpenAPI spec
+    "httpx>=0.27",        # async HTTP client to the Pexafy API
+    "python-dotenv>=1.0", # loads .env (api base url, optional keys)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+]
+
+[project.urls]
+Homepage = "https://pexafy.com"
+Repository = "https://gitlab.com/pexafy/mcp"
+
+[project.scripts]
+pexafy-mcp = "pexafy_mcp.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pexafy_mcp = ["assets/*.js", "assets/*.json"]
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

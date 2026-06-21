@@ -1,0 +1,10 @@
+.git/
+.venv/
+.env
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.mcp_inspector*
+prepare.sh
