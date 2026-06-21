@@ -157,11 +157,11 @@ def _param_overrides(facets: dict[str, list[str]]) -> dict[str, dict]:
         },
         "per_page": {
             "description": (
-                "How many photos to return. Results display as an inline grid, so this "
-                "defaults to 12 and is capped at 20 for a coherent layout. Use `cursor` to "
-                "fetch more if needed."
+                "How many photos to return. Results display as an inline grid (≈4 per row), "
+                "so default to 16 for a full, well-shaped grid; use a minimum of 12 and a "
+                "maximum of 20 for a coherent layout. Use `cursor` to fetch more if needed."
             ),
-            "example": 12,
+            "example": 16,
         },
         "after_date": {
             "description": "Only return photos published on or after this date, formatted YYYY-MM-DD.",

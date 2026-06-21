@@ -8,3 +8,6 @@ dist/
 .mcp_inspector*
 .pytest_cache/
 .ruff_cache/
+
+# Local-only widget preview harness (mock data, screenshots)
+preview_local/
