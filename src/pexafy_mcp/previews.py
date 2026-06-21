@@ -41,7 +41,7 @@ THUMB_ORIGIN = THUMB_BASE_URL
 
 
 def sign_thumb_url(photo_id: str, width: int | None = None) -> str:
-    """Short-lived signed thumbnail URL — mirrors django_app/core/utils/thumb.py."""
+    """Short-lived signed thumbnail URL — mirrors the Pexafy thumb-proxy signing scheme."""
     w = width or THUMB_WIDTH
     exp = int(time.time()) + THUMB_TTL
     sig = hmac.new(

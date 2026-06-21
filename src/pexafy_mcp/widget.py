@@ -15,7 +15,7 @@ browser bundle is vendored (ext_apps_bundle.js) and inlined here, its module exp
 rebound onto `globalThis` so the widget script can use them with no network at all.
 
 The widget reads the tool's `structuredContent.data` (each photo carries a
-server-signed `preview_url`, see image_previews.inject_preview_urls), paints a
+server-signed `preview_url`, see previews.inject_preview_urls), paints a
 responsive grid of thumbnails, and opens the full image via the host (`app.openLink`)
 on click. Thumbnails load from Pexafy's own signed thumb CDN (one CSP origin we
 control); the HMAC secret never reaches the iframe.

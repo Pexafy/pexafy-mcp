@@ -28,24 +28,32 @@ import os
 import re
 from pathlib import Path
 
-import httpx
 from dotenv import load_dotenv
-from fastmcp import FastMCP
-from fastmcp.exceptions import ToolError
-from fastmcp.server.auth import RemoteAuthProvider
-from fastmcp.server.dependencies import get_access_token, get_http_headers
-from fastmcp.apps import AppConfig, ResourceCSP, UI_MIME_TYPE
-from fastmcp.server.providers.openapi import MCPType, RouteMap
-from fastmcp.server.transforms import ToolTransform
-from fastmcp.tools.tool import ToolResult
-from fastmcp.tools.tool_transform import ToolTransformConfig
-from starlette.requests import Request
-from starlette.responses import JSONResponse
 
-# Load .env BEFORE the local modules below — they read configuration at import time.
-# find_dotenv walks up from the current working directory, so a .env in the user's
-# project is picked up; in Docker the variables come from the environment instead.
+# Load .env BEFORE importing fastmcp and the local modules below — all of them read
+# configuration at import time. find_dotenv walks up from the current working
+# directory, so a .env in the user's project is picked up; in Docker the variables
+# come from the environment instead.
 load_dotenv()
+
+# Keep the server fully offline by default: FastMCP otherwise pings PyPI on startup
+# (its CLI "check for updates"), an unexpected outbound call for a stdio/air-gapped
+# server. `fastmcp.settings` is built at import, so this must be set BEFORE importing
+# fastmcp. setdefault preserves an explicit opt-in (FASTMCP_CHECK_FOR_UPDATES in env/.env).
+os.environ.setdefault("FASTMCP_CHECK_FOR_UPDATES", "off")
+
+import httpx  # noqa: E402 — must follow the env setup above
+from fastmcp import FastMCP  # noqa: E402
+from fastmcp.exceptions import ToolError  # noqa: E402
+from fastmcp.server.auth import RemoteAuthProvider  # noqa: E402
+from fastmcp.server.dependencies import get_access_token, get_http_headers  # noqa: E402
+from fastmcp.apps import AppConfig, ResourceCSP, UI_MIME_TYPE  # noqa: E402
+from fastmcp.server.providers.openapi import MCPType, RouteMap  # noqa: E402
+from fastmcp.server.transforms import ToolTransform  # noqa: E402
+from fastmcp.tools.tool import ToolResult  # noqa: E402
+from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
+from starlette.requests import Request  # noqa: E402
+from starlette.responses import JSONResponse  # noqa: E402
 
 from . import previews  # noqa: E402 — must follow load_dotenv (reads env at import)
 from . import limits  # noqa: E402
@@ -503,12 +511,39 @@ def build_server() -> FastMCP:
     return mcp
 
 
+_USAGE = """\
+pexafy-mcp — MCP server for Pexafy image search.
+
+Usage:
+  pexafy-mcp            Start the server (transport from PEXAFY_MCP_TRANSPORT, default: stdio)
+  pexafy-mcp --help     Show this help
+  pexafy-mcp --version  Show the version
+
+Configuration is via environment variables — see .env.example. Key ones:
+  PEXAFY_API_BASE_URL    Pexafy API root (default http://localhost:8000)
+  PEXAFY_MCP_TRANSPORT   "stdio" (Claude Desktop/Code) or "http" (remote)
+  PEXAFY_MCP_HOST/PORT   bind address for the http transport (default 127.0.0.1:8765)
+"""
+
+
 def main() -> None:
     """Console-script entry point (`pexafy-mcp`).
 
     Transport is configurable: "stdio" (default, for Claude Desktop/Code) or
     "http" (Streamable HTTP, for a remote service). Host/port via env.
     """
+    import sys
+
+    from . import __version__
+
+    args = sys.argv[1:]
+    if any(a in ("-h", "--help") for a in args):
+        print(_USAGE)
+        return
+    if any(a in ("-V", "--version") for a in args):
+        print(f"pexafy-mcp {__version__}")
+        return
+
     mcp = build_server()
     if TRANSPORT == "http":
         mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)

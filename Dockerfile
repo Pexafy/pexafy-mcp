@@ -9,9 +9,12 @@ COPY src/ ./src/
 RUN pip install --no-cache-dir .
 
 # Streamable HTTP service on 0.0.0.0:8765 (overridable via env).
+# FASTMCP_CHECK_FOR_UPDATES=off keeps the container from pinging PyPI on startup
+# (the server also forces this in code; set here too for an explicit, auditable image).
 ENV PEXAFY_MCP_TRANSPORT=http \
     PEXAFY_MCP_HOST=0.0.0.0 \
-    PEXAFY_MCP_PORT=8765
+    PEXAFY_MCP_PORT=8765 \
+    FASTMCP_CHECK_FOR_UPDATES=off
 
 EXPOSE 8765
 
