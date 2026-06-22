@@ -80,3 +80,30 @@ async def test_search_by_image_requires_a_source():
     # No image_url / image_file / image_base64 → a clear ToolError, no network.
     with pytest.raises(ToolError):
         await server.search_photos_by_image()
+
+
+def _cta(method, path, q=None):
+    import httpx
+    url = "http://x" + path + (f"?q={q}" if q else "")
+    return server._pexafy_cta(httpx.Request(method, url))
+
+
+def test_cta_text_search_links_to_query():
+    cta = _cta("GET", "/api/v1/search/photos", q="two+cats")
+    assert cta["label"] == "More at Pexafy"
+    assert cta["url"].endswith("/?q=two%2Bcats") or "?q=" in cta["url"]
+
+
+def test_cta_similar_links_to_photo_page():
+    cta = _cta("GET", "/api/v1/photos/abc-123/similar")
+    assert cta["label"] == "More at Pexafy"
+    assert cta["url"].endswith("/photos/abc-123/")
+
+
+def test_cta_image_search_is_try_it():
+    cta = _cta("POST", "/api/v1/search/photos")
+    assert cta["label"] == "Try it at Pexafy"
+
+
+def test_cta_none_for_other_paths():
+    assert _cta("GET", "/api/v1/something/else") is None

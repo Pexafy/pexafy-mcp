@@ -174,13 +174,13 @@ _STYLE = """
 
   /* ---- Detail sheet ---- */
   #detail[hidden] { display: none; }
-  #detail { position: fixed; inset: 0; z-index: 10; padding: 16px;
-            background: rgba(10,10,15,.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  #detail { position: fixed; inset: 0; z-index: 10; padding: 20px 16px;
+            background: rgba(17,17,24,.86); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
             display: flex; align-items: flex-start; justify-content: center; overflow: auto;
             animation: fade .15s ease; }
   @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
   @keyframes pop { from { transform: translateY(8px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
-  .sheet { width: 100%; max-width: 540px; background: var(--surface); color: var(--fg);
+  .sheet { width: 100%; max-width: 600px; background: var(--surface); color: var(--fg);
            border: 1px solid var(--border); border-radius: var(--r-sheet); overflow: hidden;
            box-shadow: var(--shadow-sheet); animation: pop .18s ease; }
   .sheet .hero { position: relative; width: 100%; background: var(--surface-2);
@@ -191,9 +191,6 @@ _STYLE = """
                   color: #fff; background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
                   -webkit-backdrop-filter: blur(6px); text-align: center; transition: background .15s ease; }
   .sheet .close:hover { background: rgba(0,0,0,.72); }
-  .sheet .pexafy-tag { position: absolute; left: 12px; bottom: 12px; padding: 4px 10px; font-size: 11px;
-                       font-weight: 600; color: #fff; border-radius: 999px; background: rgba(0,0,0,.42);
-                       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; }
   .sheet .body { padding: 18px 20px 20px; }
   .credit { margin: 0 0 16px; font-size: 14.5px; font-weight: 600; line-height: 1.4; }
   .credit a { color: var(--primary); text-decoration: none; }
@@ -263,7 +260,8 @@ function esc(s) {
 
 const PEXAFY_HOME = "https://pexafy.com";
 const PEXAFY_PHOTO_BASE = "https://pexafy.com/photos/";
-const BRAND = '<span class="brand"><span class="dot"></span>By Pexafy</span>';
+// Footer call-to-action — its label+link come from the search context (server `cta`).
+let footUrl = PEXAFY_HOME;
 
 // The detail sheet is far taller than a small result grid, so in a short iframe it
 // gets clipped. If the host supports it, ask to present the app fullscreen while the
@@ -356,7 +354,6 @@ function openDetail(f) {
       '<div class="hero">' +
         '<button class="close" type="button" aria-label="Close">&times;</button>' +
         '<img src="' + esc(f.thumb) + '" alt="' + esc(f.description || f.author || "photo") + '">' +
-        '<span class="pexafy-tag" data-link="' + PEXAFY_HOME + '">' + BRAND + "</span>" +
       "</div>" +
       '<div class="body">' +
         '<p class="credit">' + creditHtml(f) + "</p>" +
@@ -378,6 +375,9 @@ function openDetail(f) {
       try { app.openLink({ url: el.getAttribute("data-link") }); } catch (_) {}
     });
   }
+  // Hide the grid behind the sheet so no thumbnails peek around it (cleaner than a blur).
+  gridEl.style.visibility = "hidden";
+  footEl.style.visibility = "hidden";
   detailEl.hidden = false;
   if (hostHasFullscreen()) {
     setDisplayMode("fullscreen");
@@ -394,6 +394,8 @@ function openDetail(f) {
 function closeDetail() {
   detailEl.hidden = true; detailEl.innerHTML = "";
   document.body.style.minHeight = "";
+  gridEl.style.visibility = "";
+  footEl.style.visibility = "";
   if (hostHasFullscreen()) setDisplayMode("inline");
 }
 
@@ -421,13 +423,18 @@ function render(sc) {
     shown++;
   });
   if (shown === 0) { say("No previewable images in these results."); return; }
+  // Contextual footer link: "More at Pexafy" (text/similar) or "Try it at Pexafy" (image).
+  const cta = sc && sc.cta;
+  footUrl = (cta && cta.url) || PEXAFY_HOME;
+  footEl.innerHTML =
+    '<span class="brand"><span class="dot"></span>' + esc((cta && cta.label) || "By Pexafy") + "</span>";
   statusEl.hidden = true;
   gridEl.hidden = false;
-  footEl.hidden = false;   // single "By Pexafy" wordmark under the whole grid
+  footEl.hidden = false;
 }
 
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !detailEl.hidden) closeDetail(); });
-footEl.addEventListener("click", () => { try { app.openLink({ url: PEXAFY_HOME }); } catch (e) {} });
+footEl.addEventListener("click", () => { try { app.openLink({ url: footUrl }); } catch (e) {} });
 
 app.ontoolresult = (params) => {
   try { render(params && params.structuredContent); }

@@ -27,6 +27,7 @@ import logging
 import os
 import re
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
 
@@ -169,8 +170,10 @@ async def _forward_client_key(request: httpx.Request) -> None:
 # and hard-cap it at 20 (the widget also slices to 20). Applies to the grid tools
 # (text/image search + similar); `cursor` paging still works for more. The page size
 # is FIXED, not just defaulted: a uniform 4×4 grid is the whole UX — a search that
-# returned 5 or 7 photos looked broken — so the page size is forced here regardless of
-# anything the assistant passes (the `per_page` parameter is also hidden from the tools).
+# returned 5 or 7 photos looked broken — so we force it here regardless of anything the
+# assistant passes (`per_page`/`limit` are also hidden from the tools). We do NOT touch
+# score_threshold: the engine's own relevance cut-off stays in charge of how many photos
+# are good enough to show — we never pad the grid with weak matches.
 GRID_PAGE_SIZE = 16
 
 
@@ -223,6 +226,30 @@ async def _surface_plan_limits(response: httpx.Response) -> None:
 
 
 # On a successful search body: inject a signed `preview_url` per photo (read once,
+# Public Pexafy website — the grid footer links back here, contextual to the search.
+PEXAFY_WEB = os.environ.get("PEXAFY_WEB_URL", "https://pexafy.com").rstrip("/")
+
+
+def _pexafy_cta(request: httpx.Request) -> dict | None:
+    """Context-aware call-to-action for the grid footer, derived from the request:
+    - text search  → 'More at Pexafy' → the live results page (/?q=…)
+    - similar       → 'More at Pexafy' → the reference photo page (/photos/{id}/)
+    - image search  → 'Try it at Pexafy' (no public URL to mirror an uploaded image)
+    """
+    path = request.url.path
+    m = re.search(r"/photos/([^/]+)/similar", path)
+    if m:
+        return {"label": "More at Pexafy", "url": f"{PEXAFY_WEB}/photos/{m.group(1)}/"}
+    if path.endswith("/search/photos"):
+        if request.method.upper() == "POST":  # by-image (or image+text) search
+            return {"label": "Try it at Pexafy", "url": PEXAFY_WEB}
+        q = request.url.params.get("q")
+        if q:
+            return {"label": "More at Pexafy", "url": f"{PEXAFY_WEB}/?q={quote_plus(q)}"}
+        return {"label": "More at Pexafy", "url": PEXAFY_WEB}
+    return None
+
+
 # mutate, write back). The preview_url feeds the inline result grid widget (see
 # widget.py / previews.py); it never carries the HMAC secret. Internal fields are
 # already stripped upstream in the Pexafy public schema, so nothing to prune here.
@@ -237,6 +264,9 @@ async def _enrich_response(response: httpx.Response) -> None:
         return
     previews.inject_ranks(data)         # number results #1..#N (user-facing handle)
     previews.inject_preview_urls(data)  # add signed preview_url for the grid
+    cta = _pexafy_cta(response.request)  # contextual "More/Try at Pexafy" grid footer link
+    if cta and isinstance(data, dict):
+        data["cta"] = cta
     new = json.dumps(data).encode()
     response._content = new  # already fully read & cached; downstream reads see the new body
     try:
