@@ -241,6 +241,7 @@ async def _enrich_response(response: httpx.Response) -> None:
         data = json.loads(await response.aread())
     except Exception:  # noqa: BLE001 — leave non-JSON / unparseable bodies untouched
         return
+    previews.inject_ranks(data)         # number results #1..#N (user-facing handle)
     previews.inject_preview_urls(data)  # add signed preview_url for the grid
     new = json.dumps(data).encode()
     response._content = new  # already fully read & cached; downstream reads see the new body

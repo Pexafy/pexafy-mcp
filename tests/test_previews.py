@@ -65,3 +65,23 @@ def test_inject_preview_urls_does_not_overwrite(monkeypatch):
     data = {"data": [{"photo_id": "p1", "preview_url": "keep-me"}]}
     previews.inject_preview_urls(data)
     assert data["data"][0]["preview_url"] == "keep-me"
+
+
+def test_inject_ranks_numbers_results():
+    data = {"data": [{"photo_id": "a"}, {"photo_id": "b"}, {"photo_id": "c"}]}
+    previews.inject_ranks(data)
+    assert [p["rank"] for p in data["data"]] == [1, 2, 3]
+
+
+def test_inject_ranks_runs_without_previews(monkeypatch):
+    # Ranks are independent of the thumbnail CDN config.
+    monkeypatch.setattr(previews, "PREVIEWS_AVAILABLE", False)
+    photos = [{"photo_id": "a"}, {"photo_id": "b"}]
+    previews.inject_ranks(photos)
+    assert [p["rank"] for p in photos] == [1, 2]
+
+
+def test_inject_ranks_does_not_overwrite():
+    data = {"data": [{"photo_id": "a", "rank": 99}]}
+    previews.inject_ranks(data)
+    assert data["data"][0]["rank"] == 99

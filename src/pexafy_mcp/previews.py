@@ -50,6 +50,33 @@ def sign_thumb_url(photo_id: str, width: int | None = None) -> str:
     return f"{THUMB_BASE_URL}/{photo_id}/{w}w.jpg?e={exp}&s={sig}"
 
 
+def _photos_of(data):
+    if isinstance(data, dict):
+        return data.get("data")
+    if isinstance(data, list):
+        return data
+    return None
+
+
+def inject_ranks(data) -> None:
+    """Number each photo of a search response 1..N (in place) as ``rank``.
+
+    The rank is the result's position on this page. It is the user-facing handle:
+    the grid widget shows ``#1, #2, …`` on each card, and the assistant uses it to
+    map a rank the user names back to that photo's ``photo_id`` (e.g. to fetch
+    similar images). Independent of previews — always runs.
+    """
+    photos = _photos_of(data)
+    if not isinstance(photos, list):
+        return
+    rank = 0
+    for photo in photos:
+        if not isinstance(photo, dict):
+            continue
+        rank += 1
+        photo.setdefault("rank", rank)
+
+
 def inject_preview_urls(data) -> None:
     """Add a signed ``preview_url`` to each photo in a decoded API response (in place).
 

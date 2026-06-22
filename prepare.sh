@@ -6,6 +6,9 @@
 #   - src/pexafy_mcp/assets/ext_apps_bundle.js  (vendored ext-apps SDK)
 # Needs PEXAFY_API_BASE_URL (+ a key for facets) in .env. Run it, review the diff,
 # commit the assets. Not bundled into the runtime image (see .dockerignore).
+#
+# NOTE: src/pexafy_mcp/assets/inter-*.woff2 (Pexafy's brand font, inlined into the
+# widget) are static brand assets copied from the Pexafy web app, not fetched here.
 set -euo pipefail
 cd "$(dirname "$0")"
 [ -f .env ] && set -a && . ./.env && set +a || true

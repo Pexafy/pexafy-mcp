@@ -68,12 +68,19 @@ FALLBACK_FACETS = {"source": ["Unsplash", "Pexels", "Pixabay"], "license_type": 
 PRESENTATION_GUIDANCE = (
     " PRESENTING RESULTS: show each photo as a clickable Markdown link to its image "
     "using the `urls.regular` value, with the credit from `attribution` — e.g. "
-    "`[Photo by Jane Doe on Unsplash](https://…)`. Inline thumbnail previews are also "
+    "`#1 — [Photo by Jane Doe on Unsplash](https://…)`. Inline thumbnail previews are also "
     "attached to this tool's result, but some clients (including claude.ai web) only "
     "show them inside an expandable tool panel, not in your reply. Do NOT claim you are "
     "displaying the images yourself, and if the user says they can't see them, do NOT "
     "blame ad-blockers, cache or their browser (that is never the cause) — tell them the "
     "thumbnails are in the expandable tool result and give them the links above."
+    " RANKS & SIMILAR (important UX): every result carries a `rank` (1, 2, 3, …) and the "
+    "inline grid shows it as `#1, #2, …` on each thumbnail. ALWAYS prefix each photo with "
+    "its rank when you list results, and AFTER presenting them proactively offer the user "
+    "more like a specific one — e.g. 'Want more photos like one of these? Just tell me its "
+    "number (e.g. #3).' When the user replies with a rank/number, find that result's "
+    "`photo_id` in this tool's output yourself and call the similar-photos tool with it. "
+    "Never ask the user for a photo_id or URL — they only know the rank you showed them."
 )
 
 
@@ -104,7 +111,9 @@ def _tool_descriptions() -> dict[tuple[str, str], str]:
         ("/api/v1/photos/{photo_id}/similar", "get"): (
             "Use this tool when the user says 'find something similar', 'show me more like "
             "this', or 'I need a visually consistent set'. Requires a photo_id obtained from "
-            "a previous search_photos result."
+            "a previous search result. The user normally refers to a photo by its RANK "
+            "(#1, #2, …) shown on the result grid, not by id — map that rank to the matching "
+            "result's `photo_id` yourself and pass it here; never ask the user for the id."
         ),
     }
     return {key: text + PRESENTATION_GUIDANCE for key, text in base.items()}

@@ -35,7 +35,7 @@ pexafy-mcp = "pexafy_mcp.server:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-pexafy_mcp = ["assets/*.js", "assets/*.json"]
+pexafy_mcp = ["assets/*.js", "assets/*.json", "assets/*.woff2"]
 
 [tool.ruff]
 target-version = "py312"
