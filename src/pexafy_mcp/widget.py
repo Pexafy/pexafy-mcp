@@ -148,12 +148,12 @@ _STYLE = """
               transition: transform .3s ease; }
   .card:hover img { transform: scale(1.05); }
   /* Rank — top-left, the user-facing handle ("find similar to #3"). Pexafy purple. */
-  .card .rank { position: absolute; top: 8px; left: 8px; min-width: 24px; height: 22px;
-                padding: 0 7px; display: inline-flex; align-items: center; justify-content: center;
-                font-size: 11.5px; font-weight: 700; color: var(--on-primary); border-radius: 999px;
-                background: var(--primary); box-shadow: 0 2px 8px rgba(124,58,237,.5); }
+  .card .rank { position: absolute; top: 6px; left: 6px; min-width: 18px; height: 17px;
+                padding: 0 5px; display: inline-flex; align-items: center; justify-content: center;
+                font-size: 9.5px; font-weight: 700; color: var(--on-primary); border-radius: 999px;
+                background: var(--primary); box-shadow: 0 1px 5px rgba(124,58,237,.45); }
   /* Source — top-right, frosted. */
-  .card .src { position: absolute; top: 8px; right: 8px; padding: 3px 9px; font-size: 10.5px;
+  .card .src { position: absolute; top: 6px; right: 6px; padding: 2px 7px; font-size: 9px;
                font-weight: 600; letter-spacing: .2px; color: #fff; border-radius: 999px;
                background: rgba(0,0,0,.42); backdrop-filter: blur(6px);
                -webkit-backdrop-filter: blur(6px); }
@@ -165,7 +165,9 @@ _STYLE = """
   /* "By Pexafy" — ONCE, centred, at the foot of the whole widget. */
   .gridfoot[hidden] { display: none; }
   .gridfoot { padding: 4px 12px 16px; text-align: center; }
-  .gridfoot .brand { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: var(--muted); }
+  .gridfoot .brand { font-size: 12px; font-weight: 600; letter-spacing: .3px; color: var(--muted);
+                     cursor: pointer; transition: color .15s ease; }
+  .gridfoot .brand:hover { color: var(--primary); }
   .brand .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%;
                 background: var(--primary); margin-right: 5px; vertical-align: 0;
                 box-shadow: 0 0 7px var(--primary); }
@@ -191,7 +193,7 @@ _STYLE = """
   .sheet .close:hover { background: rgba(0,0,0,.72); }
   .sheet .pexafy-tag { position: absolute; left: 12px; bottom: 12px; padding: 4px 10px; font-size: 11px;
                        font-weight: 600; color: #fff; border-radius: 999px; background: rgba(0,0,0,.42);
-                       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+                       backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); cursor: pointer; }
   .sheet .body { padding: 18px 20px 20px; }
   .credit { margin: 0 0 16px; font-size: 14.5px; font-weight: 600; line-height: 1.4; }
   .credit a { color: var(--primary); text-decoration: none; }
@@ -259,8 +261,23 @@ function esc(s) {
     c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 }
 
+const PEXAFY_HOME = "https://pexafy.com";
 const PEXAFY_PHOTO_BASE = "https://pexafy.com/photos/";
 const BRAND = '<span class="brand"><span class="dot"></span>By Pexafy</span>';
+
+// The detail sheet is far taller than a small result grid, so in a short iframe it
+// gets clipped. If the host supports it, ask to present the app fullscreen while the
+// sheet is open (and revert to inline on close); otherwise we just overlay in-frame.
+function hostHasFullscreen() {
+  try {
+    const c = app.getHostContext && app.getHostContext();
+    const modes = c && c.availableDisplayModes;
+    return Array.isArray(modes) && modes.indexOf("fullscreen") !== -1;
+  } catch (e) { return false; }
+}
+function setDisplayMode(mode) {
+  try { if (app.requestDisplayMode) app.requestDisplayMode({ mode: mode }); } catch (e) {}
+}
 
 function fields(photo) {
   const u = photo.urls || {};
@@ -339,7 +356,7 @@ function openDetail(f) {
       '<div class="hero">' +
         '<button class="close" type="button" aria-label="Close">&times;</button>' +
         '<img src="' + esc(f.thumb) + '" alt="' + esc(f.description || f.author || "photo") + '">' +
-        '<span class="pexafy-tag">' + BRAND + "</span>" +
+        '<span class="pexafy-tag" data-link="' + PEXAFY_HOME + '">' + BRAND + "</span>" +
       "</div>" +
       '<div class="body">' +
         '<p class="credit">' + creditHtml(f) + "</p>" +
@@ -362,9 +379,23 @@ function openDetail(f) {
     });
   }
   detailEl.hidden = false;
+  if (hostHasFullscreen()) {
+    setDisplayMode("fullscreen");
+  } else {
+    // No fullscreen: grow the document so autoResize expands the (possibly short)
+    // iframe to fit the sheet — otherwise a tall sheet is clipped in a small grid.
+    try {
+      const sheet = detailEl.querySelector(".sheet");
+      document.body.style.minHeight = ((sheet ? sheet.offsetHeight : 320) + 32) + "px";
+    } catch (e) {}
+  }
 }
 
-function closeDetail() { detailEl.hidden = true; detailEl.innerHTML = ""; }
+function closeDetail() {
+  detailEl.hidden = true; detailEl.innerHTML = "";
+  document.body.style.minHeight = "";
+  if (hostHasFullscreen()) setDisplayMode("inline");
+}
 
 const GRID_MAX = 20;
 function render(sc) {
@@ -396,6 +427,7 @@ function render(sc) {
 }
 
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !detailEl.hidden) closeDetail(); });
+footEl.addEventListener("click", () => { try { app.openLink({ url: PEXAFY_HOME }); } catch (e) {} });
 
 app.ontoolresult = (params) => {
   try { render(params && params.structuredContent); }

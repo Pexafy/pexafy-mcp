@@ -30,7 +30,11 @@ KEEP_OPS = {
 # Parameters removed from every kept tool. score_threshold is misleading on a
 # semantic engine (scores sit in a narrow ~0.71–0.83 band, so any threshold an LLM
 # guesses either passes everything or nothing); sort_by=newest overrides relevance.
-REMOVE_PARAMS = {"score_threshold", "sort_by"}
+# per_page is FORCED to a fixed grid size server-side (see server._grid_page_size), so
+# the assistant must not set it. fields lets a caller request a subset of photo fields,
+# which starves the detail panel of metadata (photographer/resolution/license/colour/…)
+# — always fetch the full object so the grid's detail view is complete.
+REMOVE_PARAMS = {"score_threshold", "sort_by", "per_page", "fields"}
 
 # Closed color vocabulary the LLM may use for `color_name` (the API clusters to its
 # own 700+ palette, but these 15 are the names an assistant/user actually reason with).
@@ -164,14 +168,6 @@ def _param_overrides(facets: dict[str, list[str]]) -> dict[str, dict]:
             ),
             "example": "free",
         },
-        "per_page": {
-            "description": (
-                "How many photos to return. Results display as an inline grid (≈4 per row), "
-                "so default to 16 for a full, well-shaped grid; use a minimum of 12 and a "
-                "maximum of 20 for a coherent layout. Use `cursor` to fetch more if needed."
-            ),
-            "example": 16,
-        },
         "after_date": {
             "description": "Only return photos published on or after this date, formatted YYYY-MM-DD.",
             "example": "2025-01-01",
@@ -181,7 +177,6 @@ def _param_overrides(facets: dict[str, list[str]]) -> dict[str, dict]:
             "example": "nasa",
         },
         "limit": {"example": 10},
-        "fields": {"example": "photo_id,urls,attribution"},
     }
 
 

@@ -167,24 +167,18 @@ async def _forward_client_key(request: httpx.Request) -> None:
 
 # Keep the inline result grid visually coherent: default a search page to 12 photos
 # and hard-cap it at 20 (the widget also slices to 20). Applies to the grid tools
-# (text/image search + similar); `cursor` paging still works for more.
-GRID_DEFAULT_PER_PAGE = 12
-GRID_MAX_PER_PAGE = 20
+# (text/image search + similar); `cursor` paging still works for more. The page size
+# is FIXED, not just defaulted: a uniform 4×4 grid is the whole UX — a search that
+# returned 5 or 7 photos looked broken — so the page size is forced here regardless of
+# anything the assistant passes (the `per_page` parameter is also hidden from the tools).
+GRID_PAGE_SIZE = 16
 
 
 async def _grid_page_size(request: httpx.Request) -> None:
     path = request.url.path
     if "/search/photos" not in path and "/similar" not in path:
         return
-    pp = request.url.params.get("per_page")
-    if pp is None:
-        request.url = request.url.copy_set_param("per_page", str(GRID_DEFAULT_PER_PAGE))
-        return
-    try:
-        if int(pp) > GRID_MAX_PER_PAGE:
-            request.url = request.url.copy_set_param("per_page", str(GRID_MAX_PER_PAGE))
-    except (TypeError, ValueError):
-        pass
+    request.url = request.url.copy_set_param("per_page", str(GRID_PAGE_SIZE))
 
 
 # Turn the API's plan-limit responses (HTTP 429: monthly quota / rate limit) into a
@@ -357,7 +351,6 @@ async def search_photos_by_image(
     image_file: dict | None = None,
     image_base64: str | None = None,
     q: str | None = None,
-    per_page: int | None = None,
     orientation: str | None = None,
     source: str | None = None,
     color_name: str | None = None,
@@ -386,7 +379,7 @@ async def search_photos_by_image(
         data, ctype, name = await _fetch_image(url)
     params: dict[str, object] = {}
     for key, value in (
-        ("q", q), ("per_page", per_page), ("orientation", orientation), ("source", source),
+        ("q", q), ("orientation", orientation), ("source", source),
         ("color_name", color_name), ("license_type", license_type), ("photographer", photographer),
         ("after_date", after_date), ("text_alpha", text_alpha), ("cursor", cursor),
     ):
