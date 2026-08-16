@@ -16,7 +16,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install --no-cache-dir ruff
+      # Install the dev extra rather than a bare `pip install ruff`, so the
+      # pinned version in pyproject.toml is the single source of truth.
+      - run: pip install --no-cache-dir -e ".[dev]"
       - run: ruff check src/ tests/
 
   test:

@@ -7,7 +7,8 @@
   "websiteUrl": "https://pexafy.com/mcp",
   "repository": {
     "url": "https://github.com/Pexafy/pexafy-mcp",
-    "source": "github"
+    "source": "github",
+    "id": "1336387335"
   },
   "remotes": [
     {

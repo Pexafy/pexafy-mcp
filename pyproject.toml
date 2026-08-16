@@ -21,12 +21,16 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-    "ruff>=0.6",
+    # Pinned, not floating: ruff enables new rules in new releases, so an
+    # unpinned lint job starts failing on untouched code. CI installs this
+    # same extra, so local and CI always run the identical checker.
+    "ruff==0.15.18",
 ]
 
 [project.urls]
 Homepage = "https://pexafy.com"
-Repository = "https://gitlab.com/pexafy/mcp"
+Repository = "https://github.com/Pexafy/pexafy-mcp"
+Documentation = "https://pexafy.com/mcp"
 
 [project.scripts]
 pexafy-mcp = "pexafy_mcp.server:main"
