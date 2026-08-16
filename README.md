@@ -10,7 +10,7 @@ like this" — and render the results as a thumbnail grid **inside the conversat
 
 > Remote MCP, OAuth, no API key to paste, 3 tools, images rendered inline.
 
-![The Pexafy result grid, rendered inline in a Claude conversation](docs/screenshot-grid.png)
+![The Pexafy result grid, rendered inline in a Claude conversation](docs/screenshot-grid.jpg)
 
 ---
 
@@ -109,9 +109,19 @@ server-side; max 20 MB.
 
 Every photo carries its id, URLs at several sizes, dimensions, dominant colour,
 orientation, source, licence, photographer, and an `attribution` string to display
-as credit. Results are numbered `#1, #2, …` so you can say "more like #3" instead of
-copying an id. Clients supporting [MCP Apps](https://modelcontextprotocol.io) also
-render the grid inline, with a detail panel on click.
+as credit — enough for the assistant to reason about the results rather than just
+list them.
+
+Results are numbered `#1, #2, …`, so you refer to a photo the way you would in
+conversation. No ids to copy around:
+
+![Asking for more photos like #1, and the assistant reasoning over the new set](docs/screenshot-similar.jpg)
+
+In clients that support [MCP Apps](https://modelcontextprotocol.io), clicking a
+thumbnail opens a detail panel with the full metadata — no extra call, it is all in
+the tool result already:
+
+![The detail panel: photographer, source, resolution, licence, dominant colour, orientation and description](docs/screenshot-detail.jpg)
 
 ---
 
