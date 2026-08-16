@@ -55,10 +55,9 @@ Build the image and run it however you deploy containers:
 docker run -p 8765:8765 -e PEXAFY_API_BASE_URL=https://api.pexafy.com pexafy-mcp
 ```
 
-[`docker-compose.pexafy.yml`](docker-compose.pexafy.yml) is **Pexafy's own
-production deployment** (HTTP behind Caddy, joined to the internal `pexafy_net`
-network with per-user OAuth). It is a reference, not a generic `docker compose up`
-— adapt the networking and env to your stack.
+[`docker-compose.example.yml`](docker-compose.example.yml) is a ready-to-adapt
+Compose file for the HTTP transport (put a TLS-terminating reverse proxy in front
+of it).
 
 ## Configuration
 
@@ -110,3 +109,7 @@ src/pexafy_mcp/
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+The package also redistributes third-party assets (the Inter typeface, the
+`@modelcontextprotocol/ext-apps` browser bundle and the libraries bundled into it),
+each under its own licence — see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

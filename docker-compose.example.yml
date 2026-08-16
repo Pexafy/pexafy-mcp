@@ -1,0 +1,48 @@
+# Example deployment of pexafy-mcp over the remote (Streamable HTTP) transport.
+#
+# You do NOT need this to use Pexafy from an MCP client: a hosted server already runs at
+# https://mcp.pexafy.com/mcp (OAuth, nothing to install). This file is for self-hosting —
+# your own instance, your own key, your own network.
+#
+#   cp .env.example .env      # then set at least PEXAFY_API_KEY
+#   docker compose -f docker-compose.example.yml up -d
+#   curl localhost:8765/health
+services:
+  mcp:
+    build: .
+    image: pexafy-mcp
+    container_name: pexafy_mcp
+    restart: unless-stopped
+    ports:
+      # Bound to localhost: put a TLS-terminating reverse proxy in front of it.
+      - "127.0.0.1:8765:8765"
+    environment:
+      PEXAFY_MCP_TRANSPORT: http
+      PEXAFY_MCP_HOST: 0.0.0.0
+      PEXAFY_MCP_PORT: "8765"
+
+      # Pexafy API root. Point it at the public API, or at your own deployment.
+      PEXAFY_API_BASE_URL: ${PEXAFY_API_BASE_URL:-https://api.pexafy.com}
+
+      # Fallback API key used when a client sends none of its own. Get one at
+      # https://pexafy.com/dashboard/api-keys/ — leave empty for per-user auth,
+      # where every client passes its own key (x-api-key or Bearer).
+      PEXAFY_API_KEY: ${PEXAFY_API_KEY:-}
+
+      # Analytics tag sent as the X-Source header.
+      PEXAFY_SOURCE: ${PEXAFY_SOURCE:-MCP-Agent}
+
+      # ── Optional: OAuth Resource Server ──────────────────────────────────────
+      # Engages only when all three are set. Lets clients authenticate per user
+      # against an external Authorization Server instead of passing a raw key.
+      # See src/pexafy_mcp/auth.py.
+      PEXAFY_OAUTH_RESOLVE_URL: ${PEXAFY_OAUTH_RESOLVE_URL:-}
+      PEXAFY_OAUTH_AS_URL: ${PEXAFY_OAUTH_AS_URL:-}
+      PEXAFY_MCP_PUBLIC_URL: ${PEXAFY_MCP_PUBLIC_URL:-}
+      MCP_RESOLVE_SECRET: ${MCP_RESOLVE_SECRET:-}
+
+      # ── Optional: inline result grid ─────────────────────────────────────────
+      # The grid needs a thumbnail service whose signing secret you hold. Without
+      # these, the widget degrades off cleanly and results stay text-only.
+      PEXAFY_THUMB_BASE_URL: ${PEXAFY_THUMB_BASE_URL:-}
+      PEXAFY_THUMB_HMAC_SECRET: ${PEXAFY_THUMB_HMAC_SECRET:-}

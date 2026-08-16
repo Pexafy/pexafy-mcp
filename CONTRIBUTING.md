@@ -20,7 +20,7 @@ Requires Python 3.12+.
 ./run.sh test                      # tests (also run in CI)
 ```
 
-CI runs the same two checks (`.gitlab-ci.yml`). Both are offline — the tests build
+CI runs the same two checks (`.github/workflows/ci.yml`). Both are offline — the tests build
 the server from the vendored OpenAPI snapshot, so no Pexafy backend is needed.
 
 ## Project layout

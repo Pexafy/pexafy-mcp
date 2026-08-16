@@ -27,9 +27,9 @@ KEEP_OPS = {
     ("/api/v1/photos/{photo_id}/similar", "get"),
 }
 
-# Parameters removed from every kept tool. score_threshold is misleading on a
-# semantic engine (scores sit in a narrow ~0.71–0.83 band, so any threshold an LLM
-# guesses either passes everything or nothing); sort_by=newest overrides relevance.
+# Parameters removed from every kept tool. score_threshold is misleading on a semantic
+# engine (relevance scores sit in a narrow band, so any threshold an LLM guesses either
+# passes everything or nothing); sort_by=newest overrides relevance.
 # per_page is FORCED to a fixed grid size server-side (see server._grid_page_size) and
 # `limit` (max total results) would let the assistant cap the page below that fixed size
 # — both are hidden so the grid is always full. fields lets a caller request a subset of
@@ -37,8 +37,8 @@ KEEP_OPS = {
 # license/colour/…) — always fetch the full object so the grid's detail view is complete.
 REMOVE_PARAMS = {"score_threshold", "sort_by", "per_page", "limit", "fields"}
 
-# Closed color vocabulary the LLM may use for `color_name` (the API clusters to its
-# own 700+ palette, but these 15 are the names an assistant/user actually reason with).
+# Closed color vocabulary the LLM may use for `color_name` (the API clusters to a much
+# finer palette, but these 15 are the names an assistant/user actually reason with).
 # Colors and orientations are fixed by the product and never change → hardcoded here.
 # (Sources and license types DO evolve, so they come from assets/facets.json instead.)
 COLOR_NAMES = [
