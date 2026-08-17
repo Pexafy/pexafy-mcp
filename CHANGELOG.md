@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-08-17
+
+Packaging and distribution. The server's behaviour is unchanged; the container's
+default is not.
+
+### Changed
+- **The image now defaults to the `stdio` transport, not `http`.** This is how an
+  MCP client drives a containerised server, and `docker run -i --rm pexafy-mcp`
+  previously hung — listening on a port nobody was talking to. Both compose files
+  set the transport explicitly, so serving over HTTP is unaffected; anyone who
+  relied on the old default must now pass `PEXAFY_MCP_TRANSPORT=http`.
+- The README leads with the hosted server rather than with self-hosting, and
+  documents the three tools with their full parameter signatures.
+- `docker-compose.pexafy.yml`, which described Pexafy's own deployment, is
+  replaced by a neutral `docker-compose.example.yml`.
+- CI moved from GitLab to GitHub Actions, with ruff pinned so a new release of
+  the linter cannot fail an untouched tree.
+
+### Added
+- `THIRD_PARTY_NOTICES.md` and `licenses/`: the package redistributes the Inter
+  typeface (SIL OFL 1.1) and the `@modelcontextprotocol/ext-apps` bundle
+  (Apache-2.0, with zod and `@standard-schema/spec` inside it). None of them
+  shipped with its notice.
+- `server.json`, the manifest the official MCP registry consumes. Published as
+  `com.pexafy/pexafy-mcp`, namespace validated by DNS.
+- `glama.json`, declaring the maintainer so the Glama listing can be claimed.
+- Screenshots of the inline result grid, the rank follow-up and the detail panel.
+
 ## [0.2.0] — 2026-06-21
 
 First public release.
