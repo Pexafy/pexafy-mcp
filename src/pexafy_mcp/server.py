@@ -46,7 +46,6 @@ os.environ.setdefault("FASTMCP_CHECK_FOR_UPDATES", "off")
 import httpx  # noqa: E402 — must follow the env setup above
 from fastmcp import FastMCP  # noqa: E402
 from fastmcp.exceptions import ToolError  # noqa: E402
-from fastmcp.server.auth import RemoteAuthProvider  # noqa: E402
 from fastmcp.server.dependencies import get_access_token, get_http_headers  # noqa: E402
 from fastmcp.apps import AppConfig, ResourceCSP, UI_MIME_TYPE  # noqa: E402
 from fastmcp.server.providers.openapi import MCPType, RouteMap  # noqa: E402
@@ -60,7 +59,12 @@ from . import previews  # noqa: E402 — must follow load_dotenv (reads env at i
 from . import limits  # noqa: E402
 from . import tooling  # noqa: E402
 from . import widget  # noqa: E402
-from .auth import API_KEY_CLAIM, QUOTA_MESSAGE_CLAIM, PexafyResolveVerifier  # noqa: E402
+from .auth import (  # noqa: E402
+    API_KEY_CLAIM,
+    QUOTA_MESSAGE_CLAIM,
+    PexafyResolveVerifier,
+    RootAliasedAuthProvider,
+)
 
 # --- Observability ----------------------------------------------------------
 # Logs go to stdout (captured by `docker compose logs`). Level via env so prod
@@ -452,7 +456,7 @@ def build_server() -> FastMCP:
     # OAuth Resource Server (only when enabled): validates Bearer tokens (resolving
     # them to the user's Pexafy API key, see auth.py) and exposes RFC 9728 metadata.
     auth_provider = (
-        RemoteAuthProvider(
+        RootAliasedAuthProvider(
             token_verifier=PexafyResolveVerifier(OAUTH_RESOLVE_URL, OAUTH_RESOLVE_SECRET),
             authorization_servers=[OAUTH_AS_URL],
             base_url=MCP_PUBLIC_URL,
