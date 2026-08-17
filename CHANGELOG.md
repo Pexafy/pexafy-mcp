@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] — 2026-08-17
+
+### Added
+- `/.well-known/openai-apps-challenge`, the domain-ownership check for OpenAI's app
+  directory. Their verification fetches it on the host serving this server and
+  expects the bare token — no JSON, no wrapper. Served only when
+  `OPENAI_APPS_CHALLENGE` is set; the path 404s otherwise, rather than answering
+  with an empty body that an ownership check could read as a pass.
+
 ## [0.3.4] — 2026-08-17
 
 ### Changed

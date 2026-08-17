@@ -54,7 +54,7 @@ from fastmcp.server.transforms import ToolTransform  # noqa: E402
 from fastmcp.tools.tool import ToolResult  # noqa: E402
 from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
 from starlette.requests import Request  # noqa: E402
-from starlette.responses import JSONResponse  # noqa: E402
+from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
 
 from . import previews  # noqa: E402 — must follow load_dotenv (reads env at import)
 from . import limits  # noqa: E402
@@ -563,6 +563,19 @@ def build_server() -> FastMCP:
         )(_grid_html)
         logger.info("Inline result-grid MCP App ON — %s (SDK inlined=%s, thumbs %s)",
                     widget.GRID_URI, widget.SDK_INLINED, previews.THUMB_ORIGIN)
+
+    # Domain-ownership challenge for OpenAI's app directory. Their check fetches
+    # /.well-known/openai-apps-challenge on the host serving this MCP server and
+    # expects the bare token back — no JSON, no wrapper. Served only when the token
+    # is configured, so the path 404s rather than returning an empty body when it
+    # is not, which would read as "verified with nothing".
+    challenge = os.environ.get("OPENAI_APPS_CHALLENGE", "").strip()
+    if challenge:
+        @mcp.custom_route("/.well-known/openai-apps-challenge", methods=["GET"])
+        async def openai_apps_challenge(_request: Request) -> PlainTextResponse:
+            return PlainTextResponse(challenge)
+
+        logger.info("OpenAI app-directory domain challenge served at /.well-known/openai-apps-challenge")
 
     # Liveness/readiness probe (no auth) — reports the live tool count.
     @mcp.custom_route("/health", methods=["GET"])

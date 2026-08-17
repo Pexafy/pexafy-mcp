@@ -67,3 +67,29 @@ def test_the_metadata_points_at_the_authorization_server(oauth_app):
     assert body["resource"] == "https://mcp.pexafy.com/mcp"
     assert body["authorization_servers"] == ["https://pexafy.com/"]
     assert body["scopes_supported"] == ["read"]
+
+
+def test_the_openai_challenge_is_absent_until_a_token_is_configured(oauth_app):
+    """A 404 is the honest answer. Serving an empty body would let a directory's
+    ownership check pass against nothing."""
+    assert _get(oauth_app, "/.well-known/openai-apps-challenge").status_code == 404
+
+
+def test_the_openai_challenge_returns_the_bare_token(monkeypatch):
+    """OpenAI's check expects the token itself — no JSON, no wrapper."""
+    import importlib
+    import os
+
+    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
+        monkeypatch.delenv(key, raising=False)
+    for key, value in OAUTH_ENV.items():
+        monkeypatch.setenv(key, value)
+    monkeypatch.setenv("OPENAI_APPS_CHALLENGE", "token-abc123")
+
+    from pexafy_mcp import server
+
+    importlib.reload(server)
+    response = _get(server.build_server().http_app(), "/.well-known/openai-apps-challenge")
+    assert response.status_code == 200
+    assert response.text == "token-abc123"
+    assert response.headers["content-type"].startswith("text/plain")
