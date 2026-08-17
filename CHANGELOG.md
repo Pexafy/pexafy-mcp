@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] — 2026-08-17
+
+### Fixed
+- The protected-resource metadata (RFC 9728) is now served at the well-known
+  **root** as well as under the resource path. Clients that do not implement the
+  path insertion probed `/.well-known/oauth-protected-resource`, got a 404, and
+  concluded the server had no authentication — a connector directory listed it as
+  "No Auth" and failed its connection test on that basis, against a server that
+  had answered 401 with a `WWW-Authenticate` header naming the real document.
+  One handler, two mounts, so the two cannot drift apart.
+
 ## [0.3.0] — 2026-08-17
 
 Packaging and distribution. The server's behaviour is unchanged; the container's
