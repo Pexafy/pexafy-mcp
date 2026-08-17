@@ -51,8 +51,12 @@ def test_rewrites_description_and_drops_summary():
     op = spec["paths"]["/api/v1/search/photos"]["get"]
     assert "summary" not in op
     assert "semantic" in op["description"].lower()
-    # Presentation guidance is appended to every search tool.
-    assert "PRESENTING RESULTS" in op["description"]
+    # The shape of a result is appended to every search tool, as description rather
+    # than instruction: Anthropic's connector review rejects a tool description that
+    # tells the assistant how to behave.
+    assert "Each result carries" in op["description"]
+    for imperative in ("ALWAYS", "Do NOT", "proactively", "you must show"):
+        assert imperative not in op["description"], imperative
 
 
 def test_hardcodes_value_sets_into_param_docs():

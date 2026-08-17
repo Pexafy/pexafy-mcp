@@ -60,32 +60,29 @@ SEMANTIC_EXAMPLES = [
 FALLBACK_FACETS = {"source": ["Unsplash", "Pexels", "Pixabay"], "license_type": ["free"]}
 
 
-# Appended to every search tool's description. Two jobs:
-#   1. Make results USER-VISIBLE on clients that don't render MCP tool images
-#      inline (claude.ai web shows them only inside a collapsed tool panel): tell
-#      the assistant to present each result as a clickable Markdown LINK to the
-#      image (urls.regular), with credit — links always render, external inline
-#      images are sandbox-restricted and unreliable.
-#   2. Stop the assistant CONFABULATING about display: it must never claim it is
-#      rendering the images itself, and never blame ad-blockers / cache / browser
-#      when a user says they can't see them (those are never the real cause —
-#      the cause is the client not rendering MCP image blocks inline).
-PRESENTATION_GUIDANCE = (
-    " PRESENTING RESULTS: show each photo as a clickable Markdown link to its image "
-    "using the `urls.regular` value, with the credit from `attribution` — e.g. "
-    "`#1 — [Photo by Jane Doe on Unsplash](https://…)`. Inline thumbnail previews are also "
-    "attached to this tool's result, but some clients (including claude.ai web) only "
-    "show them inside an expandable tool panel, not in your reply. Do NOT claim you are "
-    "displaying the images yourself, and if the user says they can't see them, do NOT "
-    "blame ad-blockers, cache or their browser (that is never the cause) — tell them the "
-    "thumbnails are in the expandable tool result and give them the links above."
-    " RANKS & SIMILAR (important UX): every result carries a `rank` (1, 2, 3, …) and the "
-    "inline grid shows it as `#1, #2, …` on each thumbnail. ALWAYS prefix each photo with "
-    "its rank when you list results, and AFTER presenting them proactively offer the user "
-    "more like a specific one — e.g. 'Want more photos like one of these? Just tell me its "
-    "number (e.g. #3).' When the user replies with a rank/number, find that result's "
-    "`photo_id` in this tool's output yourself and call the similar-photos tool with it. "
-    "Never ask the user for a photo_id or URL — they only know the rank you showed them."
+# Appended to every search tool's description.
+#
+# This used to be a list of instructions: always prefix results with their rank,
+# proactively offer more like one of them, never blame the browser if the images
+# do not appear. It worked, and it is exactly the shape Anthropic's connector
+# review rejects — "Describe what the tool does. Do not tell Claude how to
+# behave." Telling an assistant to call another tool the user did not ask for is
+# named explicitly as a prompt-injection pattern.
+#
+# The behaviour was never really driven by the imperatives, though: it came from
+# the assistant knowing what a result contains. So the facts stay and the orders
+# go. An assistant that knows the rank is the handle a person uses, and that the
+# matching photo_id sits in the same object, connects the two without being told.
+RESULT_SHAPE = (
+    " Each result carries: `rank`, its position on this page (1, 2, 3, …), which is also "
+    "the number drawn on the inline grid and the handle a person naturally uses to refer "
+    "to one photo among several; `photo_id`, the identifier the similar-photos tool takes, "
+    "present in the same object as the rank; `attribution`, the credit line to display "
+    "with the photo; and `urls`, the image at several sizes, `urls.regular` being the one "
+    "to link to. Inline thumbnails are attached to this tool's result as an MCP App "
+    "resource. Some clients, claude.ai on the web among them, render that resource only "
+    "inside an expandable tool panel rather than in the reply itself; where it is not "
+    "rendered, the photos remain reachable through their URLs."
 )
 
 
@@ -104,8 +101,7 @@ def _tool_descriptions() -> dict[tuple[str, str], str]:
             "search_photos_by_image instead (pass that URL, plus a `q` for any change like "
             "'but with hands raised'). Only use THIS text tool for a reference image with NO "
             "URL (a file pasted/uploaded in the chat): describe what you see in rich detail — "
-            "Pexafy is semantic, so a good description finds visually similar photos. Every "
-            "result carries an `attribution` string you must show when displaying the photo."
+            "Pexafy is semantic, so a good description finds visually similar photos."
         ),
         ("/api/v1/search/photos", "post"): (
             "Use this tool when the user provides an example image (image URL or upload) and "
@@ -116,12 +112,12 @@ def _tool_descriptions() -> dict[tuple[str, str], str]:
         ("/api/v1/photos/{photo_id}/similar", "get"): (
             "Use this tool when the user says 'find something similar', 'show me more like "
             "this', or 'I need a visually consistent set'. Requires a photo_id obtained from "
-            "a previous search result. The user normally refers to a photo by its RANK "
-            "(#1, #2, …) shown on the result grid, not by id — map that rank to the matching "
-            "result's `photo_id` yourself and pass it here; never ask the user for the id."
+            "a previous search result. A person normally refers to a photo by the rank shown "
+            "on the result grid rather than by its identifier; each search result carries both, "
+            "in the same object."
         ),
     }
-    return {key: text + PRESENTATION_GUIDANCE for key, text in base.items()}
+    return {key: text + RESULT_SHAPE for key, text in base.items()}
 
 
 def _param_overrides(facets: dict[str, list[str]]) -> dict[str, dict]:
