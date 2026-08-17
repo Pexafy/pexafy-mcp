@@ -107,3 +107,18 @@ def test_cta_image_search_is_try_it():
 
 def test_cta_none_for_other_paths():
     assert _cta("GET", "/api/v1/something/else") is None
+
+
+async def test_every_tool_declares_itself_read_only():
+    """A host uses `readOnlyHint` to decide whether a call needs confirming, and
+    Anthropic's connector directory rejects a submission whose tools carry no
+    read-only/destructive hint. All three tools search and return; none writes."""
+    from pexafy_mcp.server import build_server
+
+    for tool in await build_server().list_tools():
+        annotations = tool.annotations
+        assert annotations is not None, tool.name
+        assert annotations.readOnlyHint is True, tool.name
+        assert annotations.destructiveHint is False, tool.name
+        assert annotations.openWorldHint is True, tool.name
+        assert annotations.title, tool.name

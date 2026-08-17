@@ -48,7 +48,8 @@ from fastmcp import FastMCP  # noqa: E402
 from fastmcp.exceptions import ToolError  # noqa: E402
 from fastmcp.server.dependencies import get_access_token, get_http_headers  # noqa: E402
 from fastmcp.apps import AppConfig, ResourceCSP, UI_MIME_TYPE  # noqa: E402
-from fastmcp.server.providers.openapi import MCPType, RouteMap  # noqa: E402
+from fastmcp.server.providers.openapi import MCPType, OpenAPITool, RouteMap  # noqa: E402
+from mcp.types import ToolAnnotations  # noqa: E402
 from fastmcp.server.transforms import ToolTransform  # noqa: E402
 from fastmcp.tools.tool import ToolResult  # noqa: E402
 from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
@@ -436,6 +437,28 @@ async def search_photos_by_image(
     return ToolResult(structured_content=resp.json())
 
 
+# Every tool here reads: it searches a catalogue and returns results. Saying so in
+# the tool's annotations is not decoration — a host uses `readOnlyHint` to decide
+# whether a call needs the user's confirmation, and Anthropic's connector
+# directory rejects a submission whose tools carry no read-only/destructive hint.
+# `openWorldHint` because results come from a live catalogue that changes; the
+# same query tomorrow may return different photographs.
+READ_ONLY = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=True,
+)
+
+
+def _annotate_generated_tool(route, component) -> None:
+    """Stamp the read-only annotations onto each tool generated from the spec."""
+    if isinstance(component, OpenAPITool):
+        component.annotations = READ_ONLY.model_copy(
+            update={"title": TOOL_TITLES.get(component.name)}
+        )
+
+
 def build_server() -> FastMCP:
     """Assemble the MCP server: load the vendored OpenAPI snapshot, tune it for an
     LLM, then wire the search tools, the custom image-URL tool, the inline-grid MCP
@@ -476,6 +499,7 @@ def build_server() -> FastMCP:
         client=client,
         name="pexafy",
         mcp_names=mcp_names,
+        mcp_component_fn=_annotate_generated_tool,
         auth=auth_provider,
         route_maps=[
             RouteMap(pattern=r"^/api/v1/usage", mcp_type=MCPType.EXCLUDE),
@@ -506,7 +530,13 @@ def build_server() -> FastMCP:
     }))
 
     # Custom URL image-search tool (replaces the excluded multipart POST tool).
-    mcp.tool(name="search_photos_by_image", description=_IMAGE_TOOL_DESCRIPTION)(search_photos_by_image)
+    mcp.tool(
+        name="search_photos_by_image",
+        description=_IMAGE_TOOL_DESCRIPTION,
+        annotations=READ_ONLY.model_copy(
+            update={"title": TOOL_TITLES["search_photos_by_image"]}
+        ),
+    )(search_photos_by_image)
 
     # Inline result-grid MCP App resource — only when the thumbnail CDN is configured.
     if previews.PREVIEWS_AVAILABLE:
