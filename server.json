@@ -1,5 +1,5 @@
 {
-  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.pexafy/pexafy-mcp",
   "title": "Pexafy",
   "description": "Stock photo search: by description, by example image, or more like this.",
