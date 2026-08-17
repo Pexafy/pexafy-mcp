@@ -1,3 +1,3 @@
 """Pexafy MCP server — search Pexafy's image library from any MCP client."""
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"

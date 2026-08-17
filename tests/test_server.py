@@ -6,7 +6,7 @@ from fastmcp.exceptions import ToolError
 
 from pexafy_mcp import server
 
-EXPECTED_TOOLS = {"search_photos", "search_photos_by_image", "photo_similar"}
+EXPECTED_TOOLS = {"search_photos", "search_photos_by_image", "get_similar_photos"}
 
 
 async def test_build_server_registers_search_core():

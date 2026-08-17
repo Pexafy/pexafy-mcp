@@ -98,7 +98,7 @@ Finds photos that look like a reference image, optionally tweaked in words
 One of `image_url`, `image_file` or `image_base64` is required. Images are fetched
 server-side; max 20 MB.
 
-### `photo_similar` — more like this
+### `get_similar_photos` — more like this
 
 | Parameter | Type | Notes |
 |---|---|---|

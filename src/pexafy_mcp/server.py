@@ -303,7 +303,13 @@ client = httpx.AsyncClient(
 TOOL_TITLES = {
     "search_photos": "Search photos by description",
     "search_photos_by_image": "Search photos by example image",
-    "photo_similar": "Find similar photos",
+    "get_similar_photos": "Find similar photos",
+}
+
+# Tool names are generated from the API's operationIds. Where the result reads as
+# a noun rather than an action, it is overridden here.
+TOOL_NAME_OVERRIDES = {
+    "photo_similar_api_v1_photos__photo_id__similar_get": "get_similar_photos",
 }
 
 
@@ -475,6 +481,11 @@ def build_server() -> FastMCP:
         for op in methods.values()
         if "operationId" in op
     }
+    # The derived name would be `photo_similar` — a noun, where a tool name should
+    # read as the action it performs. Both directories say so, and OpenAI's own
+    # example is `get_order_status`. Overridden here rather than renamed in the
+    # API's operationId, so regenerating the vendored spec cannot silently undo it.
+    mcp_names.update(TOOL_NAME_OVERRIDES)
 
     # OAuth Resource Server (only when enabled): validates Bearer tokens (resolving
     # them to the user's Pexafy API key, see auth.py) and exposes RFC 9728 metadata.

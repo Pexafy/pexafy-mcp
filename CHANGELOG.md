@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] — 2026-08-17
+
+### Changed
+- `photo_similar` is now **`get_similar_photos`**. A tool name should read as the
+  action it performs; both connector directories say so, and OpenAI's own example
+  is `get_order_status`. The name is overridden where the tools are generated
+  rather than in the API's operationId, so regenerating the vendored spec cannot
+  silently undo it.
+
 ## [0.3.3] — 2026-08-17
 
 ### Changed
