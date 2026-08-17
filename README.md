@@ -167,6 +167,17 @@ docker compose -f docker-compose.example.yml up -d
 curl localhost:8765/health
 ```
 
+The image defaults to the HTTP transport. To drive it over stdio instead — which
+is how an MCP client, or a directory's automated check, runs a containerised
+server — set the transport and keep stdin open:
+
+```bash
+docker run -i --rm -e PEXAFY_MCP_TRANSPORT=stdio pexafy-mcp
+```
+
+That answers `initialize` and `tools/list` with no API key and no network: the
+tools come from the vendored OpenAPI snapshot. A key is only needed to run a search.
+
 ### Configuration
 
 Everything is environment variables — see [`.env.example`](.env.example).
