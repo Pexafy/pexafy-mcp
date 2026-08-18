@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-08-18
+
+### Changed
+- **Plan-limit messages no longer sell.** They used to name the next tier, its
+  price and link to the pricing page. OpenAI's plugin policy forbids that —
+  "Plugins must not display subscription plans, initiate new subscriptions, or
+  promote upgrades", with freemium upsells named explicitly — while allowing what
+  actually helps: "the plugin may explain that [a feature requires a different
+  plan]". So each message now states the limit, the number and the plan it belongs
+  to, and stops. The rate-limit message keeps its wait instruction, without which
+  an assistant retries in a loop and burns the same budget.
+
+### Removed
+- The plan-ladder machinery behind that copy: the cached fetch of
+  `/api/v1/billing/plans`, the next-tier lookup, the price and label helpers.
+  Nothing reads them now, and the error path no longer makes an HTTP call of its
+  own. The module went from 144 lines to 83.
+
 ## [0.3.5] — 2026-08-17
 
 ### Added
