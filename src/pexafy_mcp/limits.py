@@ -33,9 +33,9 @@ def _n(v) -> str:
     return "unlimited" if v == 0 else f"{v:,}"
 
 
-def _conn(v) -> str:
+def _keys(v) -> str:
     s = _n(v)
-    return f"{s} connector" if s == "1" else f"{s} connectors"
+    return f"{s} API key" if s == "1" else f"{s} API keys"
 
 
 def _plan_phrase(plan: str) -> str:
@@ -43,18 +43,27 @@ def _plan_phrase(plan: str) -> str:
 
 
 # ── Key limit: Django already supplies the full metric context in `ctx` ──────
+# Two things this message used to get wrong, both of which cost the user real
+# effort. It called the keys "connectors", a word that appears nowhere on the page
+# it sends them to — they arrive looking for a list of connectors and find a list
+# of API keys. And it ended with "then reconnect", which is simply not true: the
+# server resolves the OAuth token against Django on every single request, with no
+# cache, so the moment a key slot frees up the next question just works. Telling
+# someone to tear down and redo an OAuth connection they did not need to touch is
+# the most expensive sentence we could have written.
 def key_limit_message(ctx: dict | None = None) -> str:
     ctx = ctx or {}
     label = ctx.get("plan_label") or "your"
     mx = ctx.get("max")
-    in_use = "it's already in use" if _n(mx) == "1" else "they're all in use"
     head = (
-        f"I can't search Pexafy right now: your {label} plan includes {_conn(mx)}, and {in_use}."
+        f"I can't search Pexafy right now: connecting an assistant uses an API key, "
+        f"and your {label} plan's {_keys(mx)} "
+        f"{'is' if _n(mx) == '1' else 'are'} already in use."
         if mx is not None else
-        f"I can't search Pexafy right now: you've reached your {label} plan's connector limit."
+        f"I can't search Pexafy right now: your {label} plan's API key limit is reached."
     )
-    return (f"{head} Free up a connector you are not using — {CONNECTORS_URL} — "
-            f"then reconnect.")
+    return (f"{head} Revoke a key you no longer use at {CONNECTORS_URL} and ask me "
+            f"again — the connection repairs itself, there is nothing to reconnect.")
 
 
 # ── Monthly quota / rate limit: numbers from headers, next tier from plans ───
