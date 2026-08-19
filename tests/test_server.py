@@ -122,3 +122,48 @@ async def test_every_tool_declares_itself_read_only():
         assert annotations.destructiveHint is False, tool.name
         assert annotations.openWorldHint is True, tool.name
         assert annotations.title, tool.name
+
+
+async def _image_tool_schema():
+    for tool in await server.build_server().list_tools():
+        if tool.name == "search_photos_by_image":
+            return tool.to_mcp_tool().inputSchema
+    raise AssertionError("search_photos_by_image is not registered")
+
+
+async def test_the_uploaded_file_parameter_matches_the_apps_sdk_schema():
+    """OpenAI's app-directory scan refuses the server outright if it does not.
+
+    Their contract, from the Apps SDK reference: every file object declares all
+    four properties, `download_url` and `file_id` are required, `mime_type` and
+    `file_name` are not, and nothing else may appear. The schema Pydantic infers
+    from `image_file: dict | None` satisfies none of that — hence the literal in
+    FILE_PARAM_SCHEMA, and hence this test, which is the only thing standing
+    between an inferred schema and a rejected submission.
+    """
+    assert (await _image_tool_schema())["properties"]["image_file"] == {
+        "type": "object",
+        "properties": {
+            "download_url": {"type": "string"},
+            "file_id": {"type": "string"},
+            "mime_type": {"type": "string"},
+            "file_name": {"type": "string"},
+        },
+        "required": ["download_url", "file_id"],
+        "additionalProperties": False,
+    }
+
+
+async def test_the_uploaded_file_parameter_stays_optional():
+    """Optional by absence from `required`, never by a nullable union: an
+    `anyOf` wrapper hides the properties the scan reads."""
+    schema = await _image_tool_schema()
+    assert "image_file" not in schema.get("required", [])
+    assert "anyOf" not in schema["properties"]["image_file"]
+
+
+async def test_the_file_parameter_is_declared_to_the_host():
+    """The schema is only reached because `openai/fileParams` names the field."""
+    for tool in await server.build_server().list_tools():
+        if tool.name == "search_photos_by_image":
+            assert (tool.to_mcp_tool().meta or {}).get("openai/fileParams") == ["image_file"]

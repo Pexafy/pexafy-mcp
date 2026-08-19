@@ -3,7 +3,7 @@
   "name": "com.pexafy/pexafy-mcp",
   "title": "Pexafy",
   "description": "Stock photo search: by description, by example image, or more like this.",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "websiteUrl": "https://pexafy.com/mcp/",
   "repository": {
     "url": "https://github.com/Pexafy/pexafy-mcp",
