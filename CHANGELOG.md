@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] — 2026-08-20
+
+### Added
+- **`search_photos_by_image` now describes its results.** The two tools generated
+  from the OpenAPI spec inherit an output schema; the hand-written by-image tool
+  declared none, and ChatGPT surfaces that gap to the user as a badge on the tool
+  itself — not only in the submission form. It now borrows `search_photos`' schema
+  rather than restating it: both post to the same endpoint and return the same
+  envelope, so a copy would be a second source of truth free to drift from the
+  spec every other tool follows. Two tests hold it, one of which fails the moment
+  any tool ships without an output schema.
+
 ## [0.4.3] — 2026-08-20
 
 ### Fixed

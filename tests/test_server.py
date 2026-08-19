@@ -167,3 +167,18 @@ async def test_the_file_parameter_is_declared_to_the_host():
     for tool in await server.build_server().list_tools():
         if tool.name == "search_photos_by_image":
             assert (tool.to_mcp_tool().meta or {}).get("openai/fileParams") == ["image_file"]
+
+
+async def test_every_tool_describes_its_results():
+    """A tool with no output schema is one a model has to guess at, and ChatGPT
+    shows the gap to the user as a badge on the tool. The two generated tools get
+    theirs from the spec; the hand-written one had none until it borrowed it."""
+    for tool in await server.build_server().list_tools():
+        assert tool.to_mcp_tool().outputSchema, tool.name
+
+
+async def test_the_by_image_tool_borrows_the_search_result_schema():
+    """Borrowed, not copied: both tools post to the same endpoint and return the
+    same envelope, so a second copy here would be free to drift from the spec."""
+    schemas = {t.name: t.to_mcp_tool().outputSchema for t in await server.build_server().list_tools()}
+    assert schemas["search_photos_by_image"] == schemas["search_photos"]

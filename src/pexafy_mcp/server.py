@@ -482,12 +482,26 @@ READ_ONLY = ToolAnnotations(
 )
 
 
-def _annotate_generated_tool(route, component) -> None:
-    """Stamp the read-only annotations onto each tool generated from the spec."""
-    if isinstance(component, OpenAPITool):
+def _generated_tool_customizer(borrowed: dict):
+    """Hook run on every tool FastMCP generates from the spec.
+
+    It stamps the read-only annotations, and keeps `search_photos`' output schema
+    in `borrowed` for the hand-written by-image tool, which posts to the same
+    endpoint and returns the same envelope. Captured here because it is the only
+    synchronous sight of a generated tool — everything the server exposes
+    afterwards is behind an async accessor.
+    """
+
+    def customize(route, component) -> None:
+        if not isinstance(component, OpenAPITool):
+            return
         component.annotations = READ_ONLY.model_copy(
             update={"title": TOOL_TITLES.get(component.name)}
         )
+        if component.name == "search_photos" and component.output_schema:
+            borrowed["search_result"] = component.output_schema
+
+    return customize
 
 
 def build_server() -> FastMCP:
@@ -498,6 +512,8 @@ def build_server() -> FastMCP:
     """
     spec = _load_openapi_spec()
     tooling.customize_spec(spec, _load_facets())
+    # Filled by the hook below, while the generated tools are being built.
+    borrowed_schemas: dict[str, dict] = {}
 
     # Clean tool names from the verbose FastAPI operationIds (no hardcoded list).
     mcp_names = {
@@ -535,7 +551,7 @@ def build_server() -> FastMCP:
         client=client,
         name="pexafy",
         mcp_names=mcp_names,
-        mcp_component_fn=_annotate_generated_tool,
+        mcp_component_fn=_generated_tool_customizer(borrowed_schemas),
         auth=auth_provider,
         route_maps=[
             RouteMap(pattern=r"^/api/v1/usage", mcp_type=MCPType.EXCLUDE),
@@ -571,6 +587,14 @@ def build_server() -> FastMCP:
     # and it is replaced here by the one it fixes (see FILE_PARAM_SCHEMA). The
     # signature stays `dict | None` — what arrives at runtime is a plain dict, and
     # the tool reads it defensively.
+    #
+    # Its results are shaped by the API, not by this function, so the return type
+    # is `ToolResult` and nothing describes the payload — the tools generated from
+    # the spec get an output schema, this one had none, and ChatGPT shows the gap
+    # to the user as a badge on the tool. The schema is BORROWED from
+    # `search_photos` rather than written out again: both tools post to the same
+    # endpoint and return the same envelope, so a copy here would be a second
+    # source of truth, free to drift from the spec every tool else follows.
     image_tool = FunctionTool.from_function(
         search_photos_by_image,
         name="search_photos_by_image",
@@ -578,6 +602,7 @@ def build_server() -> FastMCP:
         annotations=READ_ONLY.model_copy(
             update={"title": TOOL_TITLES["search_photos_by_image"]}
         ),
+        output_schema=borrowed_schemas.get("search_result"),
     )
     image_tool.parameters["properties"]["image_file"] = FILE_PARAM_SCHEMA
     mcp.add_tool(image_tool)
