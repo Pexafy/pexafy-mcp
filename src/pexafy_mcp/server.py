@@ -57,6 +57,7 @@ from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
 
+from . import __version__  # noqa: E402
 from . import previews  # noqa: E402 — must follow load_dotenv (reads env at import)
 from . import limits  # noqa: E402
 from . import tooling  # noqa: E402
@@ -112,6 +113,12 @@ OAUTH_AS_URL = os.environ.get("PEXAFY_OAUTH_AS_URL", "")
 OAUTH_ENABLED = bool(
     TRANSPORT == "http" and OAUTH_RESOLVE_URL and OAUTH_RESOLVE_SECRET and OAUTH_AS_URL
 )
+
+# Human-facing name, shown by directories that read the server card. `mcp.name`
+# beside it is the protocol identifier ("pexafy"); a listing built from that reads
+# like a package, not a product. tests/test_server_card.py pins this to the `title`
+# in server.json, which is what the MCP registry publishes.
+SERVER_TITLE = "Pexafy"
 
 # Served at /.well-known/glama.json (see build_server). Kept in code rather than
 # read from the repository's glama.json because the Docker image ships `src/` only —
@@ -643,6 +650,50 @@ def build_server() -> FastMCP:
             return PlainTextResponse(challenge)
 
         logger.info("OpenAI app-directory domain challenge served at /.well-known/openai-apps-challenge")
+
+    # Pre-connect metadata for directories that cannot get past the auth wall.
+    # `initialize` and `tools/list` need a token — correctly so, and Smithery's own
+    # guidance is that an OAuth server SHOULD answer 401 so the flow is discovered —
+    # but that leaves a scanner with nothing to show: our Smithery listing sat empty,
+    # its scan recorded as AUTH_TIMEOUT, and their bot had asked for this very path
+    # (404 at the time). Smithery documents it as the manual escape hatch when
+    # "automatic scanning can't complete (auth wall, ...)", and the same document is
+    # what the pre-connect discovery draft (SEP-2127) and a growing crowd of
+    # directory probes look for.
+    #
+    # Generated from the live server, never hand-written: the tools carry their own
+    # wire-format schemas, so the card cannot drift from what `tools/list` returns.
+    # Public on purpose — it is the tool catalogue every client receives on connect,
+    # and it names no user and no credential.
+    @mcp.custom_route("/.well-known/mcp/server-card.json", methods=["GET"])
+    async def server_card(_request: Request) -> JSONResponse:
+        tools = [
+            tool.to_mcp_tool().model_dump(mode="json", exclude_none=True)
+            for tool in await mcp.list_tools()
+        ]
+        resources = [
+            resource.to_mcp_resource().model_dump(mode="json", exclude_none=True)
+            for resource in await mcp.list_resources()
+        ]
+        return JSONResponse(
+            {
+                "serverInfo": {
+                    "name": mcp.name,
+                    "title": SERVER_TITLE,
+                    "version": __version__,
+                },
+                # `oauth2` alone: the API-key path this server also accepts is for
+                # no-code callers holding their own key, not something a directory
+                # can discover or be issued.
+                "authentication": {
+                    "required": OAUTH_ENABLED,
+                    "schemes": ["oauth2"] if OAUTH_ENABLED else [],
+                },
+                "tools": tools,
+                "resources": resources,
+                "prompts": [],
+            }
+        )
 
     # Glama reads the maintainer claim from a `glama.json`, and for a hosted
     # connector it looks for it on the server itself: it fetches
