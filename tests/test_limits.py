@@ -31,9 +31,9 @@ def test_number_formatting():
     assert limits._n(None) == "None"
 
 
-def test_connector_pluralisation():
-    assert limits._conn(1) == "1 connector"
-    assert limits._conn(3) == "3 connectors"
+def test_key_pluralisation():
+    assert limits._keys(1) == "1 API key"
+    assert limits._keys(3) == "3 API keys"
 
 
 @pytest.mark.asyncio
@@ -68,15 +68,29 @@ async def test_rate_limit_without_a_retry_after_still_says_not_to_loop():
     _assert_no_sales_pitch(message)
 
 
-def test_connector_limit_points_at_the_user_s_own_keys():
-    """Managing your own connectors is not an upsell — it is the way out."""
+def test_key_limit_points_at_the_user_s_own_keys():
+    """Managing your own keys is not an upsell — it is the way out."""
     message = limits.key_limit_message({"plan_label": "Free", "max": 1})
-    assert "1 connector" in message
+    assert "1 API key" in message
     assert limits.CONNECTORS_URL in message
     _assert_no_sales_pitch(message)
 
 
-def test_connector_limit_without_a_known_maximum():
+def test_key_limit_speaks_the_language_of_the_page_it_links_to():
+    """It sends the user to a page listing API keys; it must say API keys."""
+    message = limits.key_limit_message({"plan_label": "Starter", "max": 3})
+    assert "3 API keys are already in use" in message
+    assert "connector" not in message.lower()
+
+
+def test_key_limit_never_asks_for_a_reconnection():
+    """The token is resolved on every request: freeing a slot is enough."""
+    message = limits.key_limit_message({"plan_label": "Starter", "max": 3})
+    assert "nothing to reconnect" in message
+    assert "then reconnect" not in message
+
+
+def test_key_limit_without_a_known_maximum():
     message = limits.key_limit_message({})
-    assert "connector limit" in message
+    assert "API key limit is reached" in message
     _assert_no_sales_pitch(message)
