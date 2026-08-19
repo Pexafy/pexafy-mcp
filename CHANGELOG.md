@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] — 2026-08-20
+
+### Added
+- **Pre-connect server card at `/.well-known/mcp/server-card.json`.** A directory
+  that cannot authenticate has nothing to show: our Smithery listing was created,
+  then left empty with its scan recorded as `AUTH_TIMEOUT`, no tools and no
+  description — and their bot had asked for this exact path seconds before giving
+  up. Smithery documents the card as the escape hatch for precisely that case
+  ("automatic scanning can't complete (auth wall, ...)"), and it is the shape the
+  pre-connect discovery draft (SEP-2127) and a growing crowd of scanners probe.
+  The endpoint keeps its 401 — that is what makes clients discover OAuth — while
+  the card, generated from the live server, states the identity, the auth wall and
+  the three tools with their real schemas. Six tests, including one that fails if
+  the card ever claims a tool the server does not serve.
+
+### Fixed
+- **The maintainer claim is now served where Glama actually reads it.** Its
+  connector listing said `glama.json not found (HTTP 404)` while the file sat on
+  the default branch of the public repository — because it does not read the
+  repository for a hosted connector: it fetches `/.well-known/glama.json` on the
+  host serving the MCP server, unauthenticated, every half hour (231 such 404s in
+  one prod access log). The same claim is now answered there. It is held in code,
+  not read from the repository file, because the image ships `src/` only; a test
+  pins the two copies together so they cannot drift.
+
 ## [0.4.4] — 2026-08-20
 
 ### Added
