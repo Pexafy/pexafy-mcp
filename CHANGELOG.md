@@ -4,6 +4,20 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] — 2026-08-20
+
+### Fixed
+- **OpenAI's app-directory scan rejected the server** on the schema of
+  `search_photos_by_image`'s `image_file` parameter: *"file parameter 'image_file'
+  must use the documented file schema"*. The parameter is typed `dict | None`, from
+  which Pydantic infers `{"anyOf": [{"type": "object"}, {"type": "null"}]}` —
+  declaring no properties at all, where the Apps SDK fixes the shape a host fills
+  in: all four of `download_url`, `file_id`, `mime_type` and `file_name` declared,
+  the first two required, the other two not, and no additional field. The schema
+  is now written out and stamped onto the tool, and the parameter stays optional by
+  being absent from `required` rather than by being nullable, since the `anyOf`
+  wrapper is exactly what hid the properties. Three tests hold the contract.
+
 ## [0.4.1] — 2026-08-19
 
 ### Fixed

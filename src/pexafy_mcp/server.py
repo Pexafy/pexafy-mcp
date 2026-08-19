@@ -51,6 +51,7 @@ from fastmcp.apps import AppConfig, ResourceCSP, UI_MIME_TYPE  # noqa: E402
 from fastmcp.server.providers.openapi import MCPType, OpenAPITool, RouteMap  # noqa: E402
 from mcp.types import ToolAnnotations  # noqa: E402
 from fastmcp.server.transforms import ToolTransform  # noqa: E402
+from fastmcp.tools.function_tool import FunctionTool  # noqa: E402
 from fastmcp.tools.tool import ToolResult  # noqa: E402
 from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
 from starlette.requests import Request  # noqa: E402
@@ -343,6 +344,30 @@ _IMAGE_TOOL_DESCRIPTION = (
 )
 
 
+# The schema `image_file` must carry, fixed by OpenAI's Apps SDK: a host that
+# uploads a file into a tool call fills these fields in, and their app-directory
+# scan refuses a server whose declaration differs. All four properties must be
+# declared even though two are optional, exactly `download_url` and `file_id` are
+# required, and no other field may appear.
+#
+# Written out rather than inferred: `dict | None` yields
+# `{"anyOf": [{"type": "object", "additionalProperties": true}, {"type": "null"}]}`,
+# which declares no properties at all, and even a Pydantic model would sit behind
+# the same `anyOf` wrapper. The parameter stays optional by being absent from the
+# tool's `required` list — an optional property, not a nullable one.
+FILE_PARAM_SCHEMA: dict[str, object] = {
+    "type": "object",
+    "properties": {
+        "download_url": {"type": "string"},
+        "file_id": {"type": "string"},
+        "mime_type": {"type": "string"},
+        "file_name": {"type": "string"},
+    },
+    "required": ["download_url", "file_id"],
+    "additionalProperties": False,
+}
+
+
 async def _fetch_image(url: str) -> tuple[bytes, str, str]:
     if not re.match(r"^https?://", url.strip(), re.IGNORECASE):
         raise ToolError("Please provide a direct http(s) URL to an image (JPEG, PNG, WebP or AVIF).")
@@ -541,13 +566,21 @@ def build_server() -> FastMCP:
     }))
 
     # Custom URL image-search tool (replaces the excluded multipart POST tool).
-    mcp.tool(
+    # Built rather than decorated so the schema can be corrected before the tool is
+    # registered: `image_file: dict | None` infers a schema the Apps SDK rejects,
+    # and it is replaced here by the one it fixes (see FILE_PARAM_SCHEMA). The
+    # signature stays `dict | None` — what arrives at runtime is a plain dict, and
+    # the tool reads it defensively.
+    image_tool = FunctionTool.from_function(
+        search_photos_by_image,
         name="search_photos_by_image",
         description=_IMAGE_TOOL_DESCRIPTION,
         annotations=READ_ONLY.model_copy(
             update={"title": TOOL_TITLES["search_photos_by_image"]}
         ),
-    )(search_photos_by_image)
+    )
+    image_tool.parameters["properties"]["image_file"] = FILE_PARAM_SCHEMA
+    mcp.add_tool(image_tool)
 
     # Inline result-grid MCP App resource — only when the thumbnail CDN is configured.
     if previews.PREVIEWS_AVAILABLE:
