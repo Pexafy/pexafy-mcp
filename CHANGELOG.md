@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] — 2026-08-20
+
+### Fixed
+- **The version was written in three files and one was left behind.** 0.4.2
+  shipped with `src/pexafy_mcp/__init__.py` still reading 0.4.1, which is the
+  string the deploy script prints as "version on disk" — so the one place a human
+  looks to confirm what production is running was the one place that was wrong.
+  Three tests now hold `pyproject.toml`, `__init__.py` and `server.json` together,
+  and require the version to have a changelog entry.
+
 ## [0.4.2] — 2026-08-20
 
 ### Fixed
