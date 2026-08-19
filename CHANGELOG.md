@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] — 2026-08-19
+
+### Fixed
+- **The key-limit message asked for a reconnection that is never needed.** It
+  ended with "then reconnect", which is not true: the server resolves the OAuth
+  token against Django on every request, with no cache, so the moment a key slot
+  frees up the next question simply works. It also called the keys "connectors",
+  a word that appears nowhere on the page it links to — users arrived looking for
+  a list of connectors and found a list of API keys.
+
 ## [0.4.0] — 2026-08-18
 
 ### Changed
