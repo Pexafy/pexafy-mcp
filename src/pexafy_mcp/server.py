@@ -120,6 +120,14 @@ OAUTH_ENABLED = bool(
 # in server.json, which is what the MCP registry publishes.
 SERVER_TITLE = "Pexafy"
 
+# The origin the inline grid is attributed to. Nothing is served from it: ChatGPT
+# renders the widget under `<widgetDomain>.web-sandbox.oaiusercontent.com`, so the
+# value is an isolation label — one origin per app, which is why its portal
+# requires it and refuses the shared default. It is also where "Open in Pexafy"
+# sends someone from the fullscreen view, which is why it is the website and not
+# the MCP host: the latter would land them on an endpoint, not on a page.
+WIDGET_DOMAIN = os.environ.get("PEXAFY_WIDGET_DOMAIN", "https://pexafy.com")
+
 
 def _load_openapi_spec() -> dict:
     """Load the spec from the live URL if PEXAFY_OPENAPI_URL is set, else the
@@ -676,15 +684,34 @@ def build_server() -> FastMCP:
 
     # Inline result-grid MCP App resource — only when the thumbnail CDN is configured.
     if previews.PREVIEWS_AVAILABLE:
+        resource_domains = [previews.THUMB_ORIGIN, *widget.RESOURCE_EXTRA_DOMAINS]
+        connect_domains = widget.RESOURCE_EXTRA_DOMAINS or None
         mcp.resource(
             widget.GRID_URI,
             name="pexafy_results_grid",
             title="Pexafy results grid",
             mime_type=UI_MIME_TYPE,
-            app=AppConfig(csp=ResourceCSP(
-                resource_domains=[previews.THUMB_ORIGIN, *widget.RESOURCE_EXTRA_DOMAINS],
-                connect_domains=widget.RESOURCE_EXTRA_DOMAINS or None,
-            )),
+            app=AppConfig(
+                csp=ResourceCSP(
+                    resource_domains=resource_domains,
+                    connect_domains=connect_domains,
+                ),
+                domain=WIDGET_DOMAIN,
+            ),
+            # The same two facts under the names ChatGPT reads. FastMCP writes the
+            # spec form (`_meta.ui.*`); ChatGPT's compatibility aliases are written
+            # here, from the SAME values, so the two encodings cannot drift.
+            # Without the domain its portal refuses the submission ("a unique
+            # domain is required"), and the CSP alias is the one that decides
+            # whether thumbnails load once the app is published rather than
+            # previewed — a failure that cannot be tested before publishing.
+            meta={
+                "openai/widgetDomain": WIDGET_DOMAIN,
+                "openai/widgetCSP": {
+                    "resource_domains": resource_domains,
+                    "connect_domains": connect_domains or [],
+                },
+            },
         )(_grid_html)
         logger.info("Inline result-grid MCP App ON — %s (SDK inlined=%s, thumbs %s)",
                     widget.GRID_URI, widget.SDK_INLINED, previews.THUMB_ORIGIN)
