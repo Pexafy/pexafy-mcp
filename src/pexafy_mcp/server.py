@@ -120,15 +120,6 @@ OAUTH_ENABLED = bool(
 # in server.json, which is what the MCP registry publishes.
 SERVER_TITLE = "Pexafy"
 
-# Served at /.well-known/glama.json (see build_server). Kept in code rather than
-# read from the repository's glama.json because the Docker image ships `src/` only —
-# a file read would 404 in production, which is exactly the bug being fixed here.
-# tests/test_glama_manifest.py pins this to the repository file so the two cannot drift.
-GLAMA_MANIFEST = {
-    "$schema": "https://glama.ai/mcp/schemas/server.json",
-    "maintainers": ["matijani"],
-}
-
 
 def _load_openapi_spec() -> dict:
     """Load the spec from the live URL if PEXAFY_OPENAPI_URL is set, else the
@@ -694,20 +685,6 @@ def build_server() -> FastMCP:
                 "prompts": [],
             }
         )
-
-    # Glama reads the maintainer claim from a `glama.json`, and for a hosted
-    # connector it looks for it on the server itself: it fetches
-    # /.well-known/glama.json on this host every half hour or so. Ours lived only
-    # at the root of the repository, so that fetch 404'd and the listing carried
-    # "glama.json not found (HTTP 404)" while the file sat there, publicly
-    # readable, on the default branch. Serve the same claim from both places.
-    #
-    # Unauthenticated on purpose: it is a public ownership claim, it carries no
-    # user data, and the whole point is that a directory can read it without
-    # credentials.
-    @mcp.custom_route("/.well-known/glama.json", methods=["GET"])
-    async def glama_manifest(_request: Request) -> JSONResponse:
-        return JSONResponse(GLAMA_MANIFEST)
 
     # Liveness/readiness probe (no auth) — reports the live tool count.
     @mcp.custom_route("/health", methods=["GET"])
