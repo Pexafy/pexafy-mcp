@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] — 2026-08-20
+
+### Changed
+- **The registry description now says the two things an agent picks a tool on.**
+  It read "Stock photo search: by description, by example image, or more like this"
+  — accurate, and silent on both the licence and the breadth, which are the whole
+  point: the images are free to use, and one query crosses nine libraries instead
+  of one provider's catalogue. That sentence is what the official registry serves
+  and what every directory ingesting it repeats, so it is the one line worth
+  spending words on. 92 of the 100 characters the schema allows.
+
 ## [0.4.7] — 2026-08-20
 
 ### Fixed
