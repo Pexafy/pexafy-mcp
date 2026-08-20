@@ -143,6 +143,10 @@ async def test_the_uploaded_file_parameter_matches_the_apps_sdk_schema():
     """
     assert (await _image_tool_schema())["properties"]["image_file"] == {
         "type": "object",
+        "description": (
+            "Filled in by the host when the user uploads an image, not by the caller. "
+            "Carries the upload's `download_url` and `file_id`."
+        ),
         "properties": {
             "download_url": {"type": "string"},
             "file_id": {"type": "string"},
@@ -182,3 +186,35 @@ async def test_the_by_image_tool_borrows_the_search_result_schema():
     same envelope, so a second copy here would be free to drift from the spec."""
     schemas = {t.name: t.to_mcp_tool().outputSchema for t in await server.build_server().list_tools()}
     assert schemas["search_photos_by_image"] == schemas["search_photos"]
+
+
+async def test_every_parameter_is_described():
+    """An undescribed parameter is one a model has to guess at from its name alone.
+
+    The generated tools inherit descriptions from the spec; the hand-written
+    by-image tool inherited nothing from a Python signature, and shipped twelve
+    bare parameters — which is what cost the listing its "Parameter descriptions"
+    point on Smithery.
+    """
+    for tool in await server.build_server().list_tools():
+        for name, schema in tool.to_mcp_tool().inputSchema.get("properties", {}).items():
+            assert schema.get("description"), f"{tool.name}.{name}"
+
+
+async def test_the_by_image_filters_repeat_the_spec_word_for_word():
+    """Borrowed from the operation this tool posts to, not paraphrased: the two
+    describe the same query parameters of the same endpoint, and a paraphrase here
+    would drift the day someone edits the spec."""
+    from pexafy_mcp.server import _load_facets, _load_openapi_spec, _spec_param_descriptions
+    from pexafy_mcp import tooling
+
+    spec = _load_openapi_spec()
+    tooling.customize_spec(spec, _load_facets())
+    from_spec = _spec_param_descriptions(spec, "/api/v1/search/photos", "post")
+    assert from_spec, "the operation whose wording is borrowed disappeared from the spec"
+
+    tools = {t.name: t for t in await server.build_server().list_tools()}
+    properties = tools["search_photos_by_image"].to_mcp_tool().inputSchema["properties"]
+    for name, text in from_spec.items():
+        if name in properties:
+            assert properties[name]["description"] == text, name

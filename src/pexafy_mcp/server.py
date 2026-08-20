@@ -364,6 +364,13 @@ _IMAGE_TOOL_DESCRIPTION = (
 # tool's `required` list — an optional property, not a nullable one.
 FILE_PARAM_SCHEMA: dict[str, object] = {
     "type": "object",
+    # A sibling of `type`, not a fifth property: their contract constrains what the
+    # file object contains, and every other parameter of every other tool carries
+    # one. Kept in the literal so the test below pins the description too.
+    "description": (
+        "Filled in by the host when the user uploads an image, not by the caller. "
+        "Carries the upload's `download_url` and `file_id`."
+    ),
     "properties": {
         "download_url": {"type": "string"},
         "file_id": {"type": "string"},
@@ -489,6 +496,54 @@ READ_ONLY = ToolAnnotations(
 )
 
 
+# Two of the three ways in to the by-image tool (`image_file` carries its own, in
+# FILE_PARAM_SCHEMA). They exist nowhere in the spec — the
+# generated tool they replace took its image as a multipart upload — so their
+# wording is written here. Every other parameter takes the API's own words.
+_IMAGE_INPUT_DESCRIPTIONS: dict[str, str] = {
+    "image_url": (
+        "Public http(s) URL of the reference image. Reuse the `image_url` of a photo "
+        "from a previous search result, or any public URL the user provides."
+    ),
+    "image_base64": (
+        "The reference image as base64 bytes, optionally as a `data:` URL. For a client "
+        "that already holds the bytes; prefer `image_url` when a link exists."
+    ),
+}
+
+
+def _spec_param_descriptions(spec: dict, path: str, method: str) -> dict[str, str]:
+    """Parameter descriptions of one operation, by parameter name."""
+    operation = spec.get("paths", {}).get(path, {}).get(method, {})
+    found: dict[str, str] = {}
+    for parameter in operation.get("parameters", []):
+        text = parameter.get("description") or (parameter.get("schema") or {}).get("description")
+        if text:
+            found[parameter["name"]] = text
+    return found
+
+
+def _describe_image_tool_params(tool, from_spec: dict[str, str]) -> None:
+    """Give every parameter of the by-image tool a description.
+
+    It is the one tool written by hand here, so its parameters carry what a Python
+    signature carries: nothing. A model then has to guess what `text_alpha` or
+    `after_date` mean on this tool while the same parameter is documented on
+    `search_photos` — and a directory scoring tool quality marks the gap (Smithery:
+    "Parameter descriptions 2/3", the only point our listing was missing).
+
+    The filters take their wording from the spec operation this tool posts to,
+    after tooling.customize_spec has tuned it, so the two cannot drift; only the
+    three image inputs are written above.
+    """
+    for name, schema in tool.parameters.get("properties", {}).items():
+        if not isinstance(schema, dict) or schema.get("description"):
+            continue
+        description = _IMAGE_INPUT_DESCRIPTIONS.get(name) or from_spec.get(name)
+        if description:
+            schema["description"] = description
+
+
 def _generated_tool_customizer(borrowed: dict):
     """Hook run on every tool FastMCP generates from the spec.
 
@@ -612,6 +667,11 @@ def build_server() -> FastMCP:
         output_schema=borrowed_schemas.get("search_result"),
     )
     image_tool.parameters["properties"]["image_file"] = FILE_PARAM_SCHEMA
+    # Same endpoint, same filters, same words: the POST operation is excluded from
+    # tool generation (this tool replaces it) but it still documents the parameters.
+    _describe_image_tool_params(
+        image_tool, _spec_param_descriptions(spec, "/api/v1/search/photos", "post")
+    )
     mcp.add_tool(image_tool)
 
     # Inline result-grid MCP App resource — only when the thumbnail CDN is configured.

@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] — 2026-08-20
+
+### Fixed
+- **Every parameter of `search_photos_by_image` now says what it is.** The two
+  generated tools inherit their parameter descriptions from the spec; the
+  hand-written by-image tool inherited what a Python signature carries — nothing —
+  and shipped twelve bare parameters, leaving a model to guess `text_alpha` from
+  its name while the identical parameter is documented on `search_photos`. The
+  filters now take their wording from the operation this tool posts to (excluded
+  from tool generation, but still the authority on those parameters), so the two
+  cannot drift; only the image inputs are written by hand. Two tests: one fails on
+  any undescribed parameter of any tool, the other on any divergence from the spec.
+  It was also the single point missing from the Smithery quality score
+  (Parameter descriptions 2/3, 97/100).
+
 ## [0.4.6] — 2026-08-20
 
 ### Removed
