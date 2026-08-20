@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] — 2026-08-20
+
+### Removed
+- **`/.well-known/glama.json` — it fixed nothing, so it goes.** 0.4.5 served it
+  because Glama's crawler asks for it and the connector listing complained it was
+  missing. Serving it turned that complaint into a different one: their connector
+  validator rejects the shape their own published schema defines
+  (`maintainers[0]`: *"expected object, received string"*), and no MCP server in
+  the wild publishes any other shape — every hosted server checked answers 404
+  there, which is what the listing was reporting in the first place. The
+  maintainer claim was never read from that URL anyway: it comes from the
+  repository file, and the server page still shows the verified-maintainer badge.
+  Back to 404, like everyone else. The server card stays — that one demonstrably
+  works: it took the Smithery release from AUTH_TIMEOUT to SUCCESS.
+
 ## [0.4.5] — 2026-08-20
 
 ### Added
