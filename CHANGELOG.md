@@ -4,6 +4,25 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.9] — 2026-08-20
+
+### Added
+- **The inline grid now declares a widget domain.** OpenAI's plugin portal
+  refused the submission — "a unique domain is required for app validation" —
+  because the grid resource named no origin of its own and fell back to the
+  sandbox everyone shares. Nothing is served from the value: ChatGPT renders the
+  widget under `<widgetDomain>.web-sandbox.oaiusercontent.com`, so it is an
+  isolation label, and the target of "Open in Pexafy" from the fullscreen view.
+  Hence `https://pexafy.com`, the website, rather than the MCP host, which would
+  land a visitor on an endpoint instead of a page. Overridable with
+  `PEXAFY_WIDGET_DOMAIN` so a deployment that is not pexafy.com does not claim to
+  be.
+- **The widget CSP is now also written under the name ChatGPT reads.** FastMCP
+  writes the spec form (`_meta.ui.csp`); ChatGPT reads `openai/widgetCSP`. Both
+  are built from the same two lists, so they cannot drift, and five tests hold
+  them together. This one is invisible until it bites: the thumbnails load in
+  preview and are blocked by CSP once the app is published.
+
 ## [0.4.8] — 2026-08-20
 
 ### Changed
