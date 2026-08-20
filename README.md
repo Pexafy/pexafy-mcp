@@ -49,6 +49,11 @@ implement OAuth can authenticate instead with a Pexafy API key sent as
 
 Liveness: [`GET /health`](https://mcp.pexafy.com/health) (public, no auth).
 
+Also listed in the [official MCP registry](https://registry.modelcontextprotocol.io)
+as `com.pexafy/pexafy-mcp`, and on
+[Smithery](https://smithery.ai/servers/pexafy/pexafy-mcp) — where a hosted
+gateway URL is available for clients that prefer it.
+
 ### What it costs
 
 The Free plan covers 5,000 searches a month with one connector — enough for regular
