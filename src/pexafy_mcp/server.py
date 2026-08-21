@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import re
+import secrets
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -115,6 +116,18 @@ MCP_PUBLIC_URL = os.environ.get("PEXAFY_MCP_PUBLIC_URL", f"http://{MCP_HOST}:{MC
 OAUTH_AS_URL = os.environ.get("PEXAFY_OAUTH_AS_URL", "")
 OAUTH_ENABLED = bool(
     TRANSPORT == "http" and OAUTH_RESOLVE_URL and OAUTH_RESOLVE_SECRET and OAUTH_AS_URL
+)
+
+# Bearer token guarding /metrics, as every other Pexafy service guards its own:
+# Prometheus reads the same secret from a file (`credentials_file` in its scrape
+# config), so the deployment points both at one token rather than copying it. Left
+# empty — a local run, a stdio client — the endpoint is open, which is what a
+# developer wants and what a deployment must not do.
+METRICS_TOKEN_FILE = os.environ.get("PEXAFY_METRICS_TOKEN_FILE", "")
+METRICS_TOKEN = (
+    Path(METRICS_TOKEN_FILE).read_text().strip()
+    if METRICS_TOKEN_FILE
+    else os.environ.get("PEXAFY_METRICS_TOKEN", "").strip()
 )
 
 # Human-facing name, shown by directories that read the server card. `mcp.name`
@@ -789,7 +802,16 @@ def build_server() -> FastMCP:
     # that decides, later, whether an idle timeout is worth the reconnections it
     # would cost. `/health` stays a liveness probe; this is the gauge.
     @mcp.custom_route("/metrics", methods=["GET"])
-    async def metrics(_request: Request) -> PlainTextResponse:
+    async def metrics(request: Request) -> PlainTextResponse:
+        if METRICS_TOKEN:
+            offered = request.headers.get("Authorization", "")
+            scheme, _, credential = offered.partition(" ")
+            # compare_digest, not ==: a token is a secret, and the timing of a
+            # string comparison tells an attacker how much of it they guessed.
+            if scheme.lower() != "bearer" or not secrets.compare_digest(
+                credential.strip(), METRICS_TOKEN
+            ):
+                return PlainTextResponse("Unauthorized", status_code=401)
         lines = []
         open_count = sessions.open_sessions()
         if open_count is None:

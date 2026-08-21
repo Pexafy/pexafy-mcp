@@ -142,3 +142,45 @@ def test_install_is_idempotent(http_app):
     patched = sessions.StreamableHTTPSessionManager.handle_request
     sessions.install()
     assert sessions.StreamableHTTPSessionManager.handle_request is patched
+
+
+def test_metrics_requires_the_token_when_one_is_configured(monkeypatch):
+    """Prometheus reads this endpoint; nobody else should have to be trusted not to."""
+    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("PEXAFY_MCP_TRANSPORT", "http")
+    monkeypatch.setenv("PEXAFY_METRICS_TOKEN", "s3cret")
+
+    from pexafy_mcp import server
+
+    importlib.reload(server)
+    app = server.build_server().http_app()
+
+    with TestClient(app) as client:
+        assert client.get("/metrics").status_code == 401
+        assert client.get("/metrics", headers={"Authorization": "Bearer wrong"}).status_code == 401
+        allowed = client.get("/metrics", headers={"Authorization": "Bearer s3cret"})
+        assert allowed.status_code == 200
+        assert "pexafy_mcp_sessions_open" in allowed.text
+
+
+def test_metrics_token_can_come_from_a_file(monkeypatch, tmp_path):
+    """Prod points this at the same file Prometheus reads, so the secret lives once."""
+    token_file = tmp_path / "monitoring_token"
+    token_file.write_text("from-a-file\n")
+
+    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
+        monkeypatch.delenv(key, raising=False)
+    monkeypatch.setenv("PEXAFY_MCP_TRANSPORT", "http")
+    monkeypatch.setenv("PEXAFY_METRICS_TOKEN_FILE", str(token_file))
+
+    from pexafy_mcp import server
+
+    importlib.reload(server)
+    app = server.build_server().http_app()
+
+    with TestClient(app) as client:
+        assert client.get("/metrics").status_code == 401
+        assert client.get(
+            "/metrics", headers={"Authorization": "Bearer from-a-file"}
+        ).status_code == 200
