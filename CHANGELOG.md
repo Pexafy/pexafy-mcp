@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.11] — 2026-08-21
+
+### Fixed
+- **The 401 now names both ways in.** The MCP spec's 401 is a header, and a
+  client that speaks OAuth follows it. Production has clients that do not. One
+  visitor, on 20 August, four residential IPs, two hours: 151 requests to
+  `/mcp`, 50 carrying a credential, 66 token rejections logged on the Django
+  side, and not one `.well-known` document ever fetched — he never entered the
+  OAuth chain, because his client cannot. This server accepts a plain Pexafy API
+  key as the bearer, which was exactly what he needed, and neither answer he got
+  mentioned it: an empty body when he sent nothing (1741 such responses over two
+  months, the most common answer this server gives), and 301 bytes of OAuth
+  advice when he sent something — "clear the stored tokens and reconnect", a
+  dead end for a client with no tokens to clear.
+
+  `unauthorized.py` fills both, with different words, because "you sent nothing"
+  and "what you sent was refused" are different problems. The status, the
+  `WWW-Authenticate` header and the SDK's machine-readable `error` code are all
+  preserved, so no client behaviour changes — only what a human reads. A 401
+  that is neither empty nor one of the SDK's own JSON refusals passes through
+  byte for byte, `/metrics` included.
+
 ## [0.4.10] — 2026-08-21
 
 ### Fixed

@@ -14,7 +14,8 @@ client needs on top:
   - limits.py    turns plan-limit (429) responses into in-chat upgrade nudges;
   - auth.py      per-user auth: OAuth Resource Server or a forwarded API key;
   - sessions.py  answers the 2026-07-28 discovery probe before the SDK allocates a
-                 transport for it, and counts the sessions held in memory.
+                 transport for it, and counts the sessions held in memory;
+  - unauthorized.py  puts a readable explanation in the otherwise empty 401.
 
 Entry point: `pexafy-mcp` (console script) → ``main()``. Transport is `stdio`
 (Claude Desktop/Code) or `http` (remote Streamable HTTP), selected by env.
@@ -57,6 +58,7 @@ from fastmcp.server.transforms import ToolTransform  # noqa: E402
 from fastmcp.tools.function_tool import FunctionTool  # noqa: E402
 from fastmcp.tools.tool import ToolResult  # noqa: E402
 from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
+from starlette.middleware import Middleware  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
 
@@ -65,6 +67,7 @@ from . import previews  # noqa: E402 — must follow load_dotenv (reads env at i
 from . import limits  # noqa: E402
 from . import sessions  # noqa: E402
 from . import tooling  # noqa: E402
+from . import unauthorized  # noqa: E402
 from . import widget  # noqa: E402
 from .auth import (  # noqa: E402
     API_KEY_CLAIM,
@@ -129,6 +132,12 @@ METRICS_TOKEN = (
     if METRICS_TOKEN_FILE
     else os.environ.get("PEXAFY_METRICS_TOKEN", "").strip()
 )
+
+# Starlette middleware the remote server runs. One entry: the 401 an
+# unauthenticated caller receives is empty by default, and a person whose client
+# does not speak OAuth has no way to learn that a plain Pexafy API key works.
+# Passed to `http_app()`/`run()`, so it wraps the route that issues the 401.
+HTTP_MIDDLEWARE = [Middleware(unauthorized.UnauthorizedHint)]
 
 # Human-facing name, shown by directories that read the server card. `mcp.name`
 # beside it is the protocol identifier ("pexafy"); a listing built from that reads
@@ -886,7 +895,7 @@ def main() -> None:
 
     mcp = build_server()
     if TRANSPORT == "http":
-        mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
+        mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT, middleware=HTTP_MIDDLEWARE)
     else:
         mcp.run()  # stdio
 
