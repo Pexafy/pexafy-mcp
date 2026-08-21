@@ -12,7 +12,10 @@ client needs on top:
   - widget.py    an MCP Apps UI resource that renders results as an inline grid;
   - previews.py  signs thumbnail URLs injected into each result for that grid;
   - limits.py    turns plan-limit (429) responses into in-chat upgrade nudges;
-  - auth.py      per-user auth: OAuth Resource Server or a forwarded API key.
+  - auth.py      per-user auth: OAuth Resource Server or a forwarded API key;
+  - sessions.py  answers the 2026-07-28 discovery probe before the SDK allocates a
+                 transport for it, and counts the sessions held in memory;
+  - unauthorized.py  puts a readable explanation in the otherwise empty 401.
 
 Entry point: `pexafy-mcp` (console script) → ``main()``. Transport is `stdio`
 (Claude Desktop/Code) or `http` (remote Streamable HTTP), selected by env.
@@ -26,6 +29,7 @@ import json
 import logging
 import os
 import re
+import secrets
 from pathlib import Path
 from urllib.parse import quote_plus
 
@@ -54,13 +58,16 @@ from fastmcp.server.transforms import ToolTransform  # noqa: E402
 from fastmcp.tools.function_tool import FunctionTool  # noqa: E402
 from fastmcp.tools.tool import ToolResult  # noqa: E402
 from fastmcp.tools.tool_transform import ToolTransformConfig  # noqa: E402
+from starlette.middleware import Middleware  # noqa: E402
 from starlette.requests import Request  # noqa: E402
 from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
 
 from . import __version__  # noqa: E402
 from . import previews  # noqa: E402 — must follow load_dotenv (reads env at import)
 from . import limits  # noqa: E402
+from . import sessions  # noqa: E402
 from . import tooling  # noqa: E402
+from . import unauthorized  # noqa: E402
 from . import widget  # noqa: E402
 from .auth import (  # noqa: E402
     API_KEY_CLAIM,
@@ -113,6 +120,24 @@ OAUTH_AS_URL = os.environ.get("PEXAFY_OAUTH_AS_URL", "")
 OAUTH_ENABLED = bool(
     TRANSPORT == "http" and OAUTH_RESOLVE_URL and OAUTH_RESOLVE_SECRET and OAUTH_AS_URL
 )
+
+# Bearer token guarding /metrics, as every other Pexafy service guards its own:
+# Prometheus reads the same secret from a file (`credentials_file` in its scrape
+# config), so the deployment points both at one token rather than copying it. Left
+# empty — a local run, a stdio client — the endpoint is open, which is what a
+# developer wants and what a deployment must not do.
+METRICS_TOKEN_FILE = os.environ.get("PEXAFY_METRICS_TOKEN_FILE", "")
+METRICS_TOKEN = (
+    Path(METRICS_TOKEN_FILE).read_text().strip()
+    if METRICS_TOKEN_FILE
+    else os.environ.get("PEXAFY_METRICS_TOKEN", "").strip()
+)
+
+# Starlette middleware the remote server runs. One entry: the 401 an
+# unauthenticated caller receives is empty by default, and a person whose client
+# does not speak OAuth has no way to learn that a plain Pexafy API key works.
+# Passed to `http_app()`/`run()`, so it wraps the route that issues the 401.
+HTTP_MIDDLEWARE = [Middleware(unauthorized.UnauthorizedHint)]
 
 # Human-facing name, shown by directories that read the server card. `mcp.name`
 # beside it is the protocol identifier ("pexafy"); a listing built from that reads
@@ -773,6 +798,52 @@ def build_server() -> FastMCP:
             }
         )
 
+    # Answer the sessionless 2026-07-28 discovery probe before the SDK builds a
+    # transport it will never be able to reach again. See sessions.py — the reply
+    # is the one the SDK already sends, so no client behaviour changes.
+    sessions.install()
+
+    # Prometheus scrape (no auth, and blocked at the edge — Caddy 404s /metrics on
+    # mcp.pexafy.com, so only the monitoring stack on the Docker network reads it).
+    # One number matters here: how many Streamable-HTTP sessions the process is
+    # holding. The SDK creates one per client connection and only drops it when the
+    # client says goodbye, which almost none of them do — so this curve is the one
+    # that decides, later, whether an idle timeout is worth the reconnections it
+    # would cost. `/health` stays a liveness probe; this is the gauge.
+    @mcp.custom_route("/metrics", methods=["GET"])
+    async def metrics(request: Request) -> PlainTextResponse:
+        if METRICS_TOKEN:
+            offered = request.headers.get("Authorization", "")
+            scheme, _, credential = offered.partition(" ")
+            # compare_digest, not ==: a token is a secret, and the timing of a
+            # string comparison tells an attacker how much of it they guessed.
+            if scheme.lower() != "bearer" or not secrets.compare_digest(
+                credential.strip(), METRICS_TOKEN
+            ):
+                return PlainTextResponse("Unauthorized", status_code=401)
+        lines = []
+        open_count = sessions.open_sessions()
+        if open_count is None:
+            # sessions.py has already logged why. Emit nothing rather than a zero
+            # that Grafana would draw as "all is well".
+            lines.append("# pexafy_mcp_sessions_open unavailable — see server log")
+        else:
+            lines += [
+                "# HELP pexafy_mcp_sessions_open Streamable-HTTP sessions held in memory.",
+                "# TYPE pexafy_mcp_sessions_open gauge",
+                f"pexafy_mcp_sessions_open {open_count}",
+            ]
+        lines += [
+            "# HELP pexafy_mcp_discovery_probes_total Sessionless server/discover probes "
+            "answered without allocating a transport.",
+            "# TYPE pexafy_mcp_discovery_probes_total counter",
+            f"pexafy_mcp_discovery_probes_total {sessions.probes_short_circuited()}",
+        ]
+        return PlainTextResponse(
+            "\n".join(lines) + "\n",
+            media_type="text/plain; version=0.0.4; charset=utf-8",
+        )
+
     # Liveness/readiness probe (no auth) — reports the live tool count.
     @mcp.custom_route("/health", methods=["GET"])
     async def health(_request: Request) -> JSONResponse:
@@ -824,7 +895,7 @@ def main() -> None:
 
     mcp = build_server()
     if TRANSPORT == "http":
-        mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT)
+        mcp.run(transport="http", host=MCP_HOST, port=MCP_PORT, middleware=HTTP_MIDDLEWARE)
     else:
         mcp.run()  # stdio
 
