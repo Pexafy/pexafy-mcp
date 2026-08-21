@@ -12,7 +12,9 @@ client needs on top:
   - widget.py    an MCP Apps UI resource that renders results as an inline grid;
   - previews.py  signs thumbnail URLs injected into each result for that grid;
   - limits.py    turns plan-limit (429) responses into in-chat upgrade nudges;
-  - auth.py      per-user auth: OAuth Resource Server or a forwarded API key.
+  - auth.py      per-user auth: OAuth Resource Server or a forwarded API key;
+  - sessions.py  answers the 2026-07-28 discovery probe before the SDK allocates a
+                 transport for it, and counts the sessions held in memory.
 
 Entry point: `pexafy-mcp` (console script) → ``main()``. Transport is `stdio`
 (Claude Desktop/Code) or `http` (remote Streamable HTTP), selected by env.
@@ -60,6 +62,7 @@ from starlette.responses import JSONResponse, PlainTextResponse  # noqa: E402
 from . import __version__  # noqa: E402
 from . import previews  # noqa: E402 — must follow load_dotenv (reads env at import)
 from . import limits  # noqa: E402
+from . import sessions  # noqa: E402
 from . import tooling  # noqa: E402
 from . import widget  # noqa: E402
 from .auth import (  # noqa: E402
@@ -771,6 +774,43 @@ def build_server() -> FastMCP:
                 "resources": resources,
                 "prompts": [],
             }
+        )
+
+    # Answer the sessionless 2026-07-28 discovery probe before the SDK builds a
+    # transport it will never be able to reach again. See sessions.py — the reply
+    # is the one the SDK already sends, so no client behaviour changes.
+    sessions.install()
+
+    # Prometheus scrape (no auth, and blocked at the edge — Caddy 404s /metrics on
+    # mcp.pexafy.com, so only the monitoring stack on the Docker network reads it).
+    # One number matters here: how many Streamable-HTTP sessions the process is
+    # holding. The SDK creates one per client connection and only drops it when the
+    # client says goodbye, which almost none of them do — so this curve is the one
+    # that decides, later, whether an idle timeout is worth the reconnections it
+    # would cost. `/health` stays a liveness probe; this is the gauge.
+    @mcp.custom_route("/metrics", methods=["GET"])
+    async def metrics(_request: Request) -> PlainTextResponse:
+        lines = []
+        open_count = sessions.open_sessions()
+        if open_count is None:
+            # sessions.py has already logged why. Emit nothing rather than a zero
+            # that Grafana would draw as "all is well".
+            lines.append("# pexafy_mcp_sessions_open unavailable — see server log")
+        else:
+            lines += [
+                "# HELP pexafy_mcp_sessions_open Streamable-HTTP sessions held in memory.",
+                "# TYPE pexafy_mcp_sessions_open gauge",
+                f"pexafy_mcp_sessions_open {open_count}",
+            ]
+        lines += [
+            "# HELP pexafy_mcp_discovery_probes_total Sessionless server/discover probes "
+            "answered without allocating a transport.",
+            "# TYPE pexafy_mcp_discovery_probes_total counter",
+            f"pexafy_mcp_discovery_probes_total {sessions.probes_short_circuited()}",
+        ]
+        return PlainTextResponse(
+            "\n".join(lines) + "\n",
+            media_type="text/plain; version=0.0.4; charset=utf-8",
         )
 
     # Liveness/readiness probe (no auth) — reports the live tool count.

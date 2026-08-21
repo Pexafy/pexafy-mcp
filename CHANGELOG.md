@@ -4,6 +4,39 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.10] — 2026-08-21
+
+### Fixed
+- **The 2026-07-28 discovery probe no longer leaks a session.** Clients speaking
+  the new protocol revision — Claude Code, Claude-User, ChatGPT's `openai-mcp`,
+  a third-party Go client — open with a sessionless `server/discover` POST. The
+  SDK this server runs on tops out at 2025-11-25, so it does not know the
+  method; but it decides to build a whole transport *before* it reads the body,
+  on the sole fact that no `Mcp-Session-Id` was sent, and only then answers
+  `400 Bad Request: Missing session ID`. The client falls back to the legacy
+  handshake and everything works — except the transport it created is now
+  unreachable, and nothing collects it. Production over 21 hours: 120 transports
+  created, 4 closed, 49 of them from this path, ~42 KB of RSS each.
+
+  `sessions.py` now answers the probe before the SDK can allocate anything, with
+  the same status and the same JSON-RPC body, byte for byte, so no client sees a
+  change. The guard is narrow on purpose: POST, `Mcp-Method: server/discover`,
+  **no** `Mcp-Session-Id`, and the request body is never read. Claude-User sends
+  the same method *inside* an established session — that request keeps its
+  session header and is left entirely to the SDK, which is what the tool call
+  after it depends on. The dropped `Mcp-Session-Id` response header named the
+  transport the SDK had just orphaned: of 149 such ids handed out in production,
+  not one was ever sent back by a client.
+
+### Added
+- **`/metrics` publishes the live session count.** The SDK only drops a session
+  when the client says goodbye, and almost none of them do, so the number held
+  in memory only grows between restarts. Nothing is expired yet — the longest
+  silence a real client took before coming back was 3 h 36, so any timeout short
+  enough to be useful would also cut live users. The gauge comes first; the
+  decision follows the curve. Prometheus scrapes it over the Docker network and
+  Caddy 404s the path from the outside.
+
 ## [0.4.9] — 2026-08-20
 
 ### Added

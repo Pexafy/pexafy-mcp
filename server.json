@@ -3,7 +3,7 @@
   "name": "com.pexafy/pexafy-mcp",
   "title": "Pexafy",
   "description": "Semantic search over free-to-use stock photos from 9 libraries: by words, image, or similar.",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "websiteUrl": "https://pexafy.com/mcp/",
   "repository": {
     "url": "https://github.com/Pexafy/pexafy-mcp",
