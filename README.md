@@ -185,15 +185,21 @@ Serving over HTTP is a matter of setting the transport, which both compose files
 
 ### Configuration
 
-Everything is environment variables — see [`.env.example`](.env.example).
+Every setting is an environment variable, and every one of them is optional: with
+none set, `pexafy-mcp` starts on stdio and answers `initialize` and `tools/list`
+offline. Two are worth knowing about.
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PEXAFY_API_BASE_URL` | `http://localhost:8000` | Pexafy API root |
-| `PEXAFY_API_KEY` | — | Fallback key (stdio/dev) |
-| `PEXAFY_MCP_TRANSPORT` | `stdio` | `stdio` or `http` |
-| `PEXAFY_THUMB_BASE_URL` / `PEXAFY_THUMB_HMAC_SECRET` | — | Enable the inline grid (signed thumbnails) |
-| `PEXAFY_OAUTH_*` / `MCP_RESOLVE_SECRET` | — | Per-user OAuth (HTTP only) |
+| `PEXAFY_MCP_TRANSPORT` | `stdio` | `stdio` for a local client, `http` to serve remotely |
+| `PEXAFY_API_BASE_URL` | `http://localhost:8000` | Pexafy API root — point it at `https://api.pexafy.com`, or at your own deployment |
+
+The rest belongs to a deployment rather than to someone running the container, and
+lives in [`.env.example`](.env.example): a fallback `PEXAFY_API_KEY` for stdio use
+when the client sends no key of its own, `PEXAFY_THUMB_BASE_URL` and
+`PEXAFY_THUMB_HMAC_SECRET` to sign the thumbnails behind the inline grid, and
+`PEXAFY_OAUTH_*` with `MCP_RESOLVE_SECRET` to run the HTTP transport as an OAuth
+resource server. None of them is needed to start the server.
 
 ---
 
