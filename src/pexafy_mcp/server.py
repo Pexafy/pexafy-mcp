@@ -627,7 +627,10 @@ def build_server() -> FastMCP:
     # them to the user's Pexafy API key, see auth.py) and exposes RFC 9728 metadata.
     auth_provider = (
         RootAliasedAuthProvider(
-            token_verifier=PexafyResolveVerifier(OAUTH_RESOLVE_URL, OAUTH_RESOLVE_SECRET),
+            token_verifier=PexafyResolveVerifier(
+                OAUTH_RESOLVE_URL, OAUTH_RESOLVE_SECRET,
+                not_oauth_tokens=[METRICS_TOKEN],
+            ),
             authorization_servers=[OAUTH_AS_URL],
             base_url=MCP_PUBLIC_URL,
             scopes_supported=["read"],

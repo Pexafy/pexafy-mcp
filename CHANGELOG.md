@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.12] — 2026-08-28
+
+### Fixed
+- **The metrics token is no longer resolved as an OAuth token.** Prometheus
+  scrapes `/metrics` every 15 s with the monitoring bearer; the auth middleware
+  handed that bearer to Django's `/oauth/mcp/resolve` like any other, Django
+  answered 401, and the server logged "Token resolution rejected" — 5 760 times
+  a day since 26 August, the exact line a real rejection produces. Nothing was
+  broken for clients (`/metrics` checks the token itself and answered 200), but
+  a genuine failure would have been invisible in that log, and Django took a
+  useless authenticated request four times a minute. The verifier now knows the
+  metrics token is not an OAuth token and returns without calling anyone.
+
 ## [0.4.11] — 2026-08-21
 
 ### Fixed
