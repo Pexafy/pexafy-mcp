@@ -12,6 +12,7 @@ hook in server.py can send it as `x-api-key` when calling the Pexafy API.
 from __future__ import annotations
 
 import logging
+import secrets
 
 import httpx
 from fastmcp.server.auth import AccessToken, RemoteAuthProvider, TokenVerifier
@@ -31,13 +32,21 @@ class PexafyResolveVerifier(TokenVerifier):
 
     def __init__(self, resolve_url: str, resolve_secret: str,
                  required_scopes: list[str] | None = None,
-                 advertised_scopes: list[str] | None = None):
+                 advertised_scopes: list[str] | None = None,
+                 not_oauth_tokens: list[str] | None = None,
+                 client: httpx.AsyncClient | None = None):
         super().__init__(required_scopes=required_scopes)
         self._url = resolve_url
         self._secret = resolve_secret
         # Search-only connector: advertise/grant `read` alone (no collection writes).
         self._advertised_scopes = advertised_scopes or ["read"]
-        self._client = httpx.AsyncClient(timeout=10)
+        # Bearers this server knows by other means and must not send to Django
+        # as OAuth tokens — today the metrics token. Prometheus scraped /metrics
+        # every 15 s with it, the auth middleware resolved it every time, and
+        # Django answered 5 760 × 401 a day from 2026-08-26 on: noise that buried
+        # every real "Token resolution rejected" in the same log line.
+        self._not_oauth = [t for t in (not_oauth_tokens or []) if t]
+        self._client = client or httpx.AsyncClient(timeout=10)
 
     @property
     def scopes_supported(self) -> list[str]:
@@ -58,6 +67,12 @@ class PexafyResolveVerifier(TokenVerifier):
                 scopes=self._advertised_scopes,
                 claims={API_KEY_CLAIM: token},
             )
+
+        # A credential meant for another route (the metrics token) is not an
+        # OAuth token: the route checks it itself, and resolving it here would
+        # only make Django log a rejection. Constant-time, it is a secret.
+        if any(secrets.compare_digest(token, known) for known in self._not_oauth):
+            return None
 
         # Otherwise it is an opaque OAuth (DOT) token — resolve it server-side.
         try:
