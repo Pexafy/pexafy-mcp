@@ -10,6 +10,9 @@ like this" — and render the results as a thumbnail grid **inside the conversat
 
 > Remote MCP, OAuth, no API key to paste, 3 tools, images rendered inline.
 
+The product page, with the same steps in twenty-three languages, is at
+[pexafy.com/mcp](https://pexafy.com/mcp/).
+
 ![The Pexafy result grid, rendered inline in a Claude conversation](docs/screenshot-grid.jpg)
 
 ---
