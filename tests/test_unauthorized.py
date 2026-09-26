@@ -72,7 +72,7 @@ def test_a_caller_with_no_credential_is_told_both_ways_in(guarded_app):
     assert body["error"] == "unauthorized"
     assert "OAuth" in body["error_description"]
     assert "pexafy_api_" in body["error_description"], "the API key path must be named"
-    assert body["keys_url"] == "https://pexafy.com/dashboard/api-keys"
+    assert body["keys_url"] == "https://pexafy.com/dashboard/api-keys/create/"
 
 
 def test_a_caller_with_no_key_is_sent_to_the_form_that_makes_one(guarded_app):
@@ -95,7 +95,8 @@ def test_a_refused_credential_gets_the_other_message(guarded_app):
     assert body["error"] == "invalid_token", "the SDK's error code must survive"
     assert "expired" in body["error_description"], "an expired OAuth token is the likely cause"
     assert "pexafy_" in body["error_description"], "so is a key pasted in the wrong shape"
-    assert body["keys_url"] == "https://pexafy.com/dashboard/api-keys"
+    assert "an MCP Agent key at https://pexafy.com/dashboard/api-keys/create/." in body["error_description"]
+    assert body["keys_url"] == "https://pexafy.com/dashboard/api-keys/create/"
 
 
 def test_the_www_authenticate_header_still_leads_the_oauth_chain(guarded_app):

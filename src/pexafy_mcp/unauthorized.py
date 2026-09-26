@@ -42,8 +42,8 @@ logger = logging.getLogger(__name__)
 
 KEYS_URL = "https://pexafy.com/dashboard/api-keys"
 
-# The form that makes a key, for the caller who has none yet: the list above is one
-# click short of it. "MCP Agent" is the client origin to pick there.
+# The form that makes a key, which every 401 links, in its prose and in `keys_url`:
+# the list above is one click short of it. "MCP Agent" is the client origin to pick there.
 CREATE_KEY_URL = KEYS_URL.rstrip("/") + "/create/"
 
 # The error codes the auth layer answers 401 with. Anything else in a 401 body
@@ -59,15 +59,15 @@ _NO_CREDENTIAL = {
         "yourself as 'Authorization: Bearer pexafy_api_...'. Create an MCP Agent key "
         f"at {CREATE_KEY_URL}."
     ),
-    "keys_url": KEYS_URL,
+    "keys_url": CREATE_KEY_URL,
 }
 
 _REFUSED_DESCRIPTION = (
     "The credential you sent was not accepted. If you are using a Pexafy API "
     "key, send the whole key — it starts with 'pexafy_' — as 'Authorization: "
-    f"Bearer pexafy_api_...'; create or copy one at {KEYS_URL}. If you are using "
-    "OAuth, the access token has expired or was revoked: reconnect the connector "
-    "to get a new one."
+    f"Bearer pexafy_api_...'; create an MCP Agent key at {CREATE_KEY_URL}. If you "
+    "are using OAuth, the access token has expired or was revoked: reconnect the "
+    "connector to get a new one."
 )
 
 
@@ -93,7 +93,7 @@ def _rewrite(scope: Scope, body: bytes) -> bytes | None:
             "error_description": _REFUSED_DESCRIPTION
             if _presented_a_credential(scope)
             else _NO_CREDENTIAL["error_description"],
-            "keys_url": KEYS_URL,
+            "keys_url": CREATE_KEY_URL,
         }
     ).encode()
 

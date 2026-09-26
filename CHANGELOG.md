@@ -11,8 +11,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   "Create a key at https://pexafy.com/dashboard/api-keys" — the list of keys, one click
   short for a caller who has none. It now says "Create an MCP Agent key at
   https://pexafy.com/dashboard/api-keys/create/": the form itself, and the client origin
-  to pick there. `keys_url` and the refused-credential message still point at the list,
-  where an existing key can be shown again.
+  to pick there. The refused-credential message links the same form ("create an MCP
+  Agent key", where it said "create or copy one"), and so does `keys_url`.
 
 ## [0.4.12] — 2026-08-28
 
