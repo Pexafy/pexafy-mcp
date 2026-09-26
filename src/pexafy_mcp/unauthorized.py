@@ -42,6 +42,10 @@ logger = logging.getLogger(__name__)
 
 KEYS_URL = "https://pexafy.com/dashboard/api-keys"
 
+# The form that makes a key, for the caller who has none yet: the list above is one
+# click short of it. "MCP Agent" is the client origin to pick there.
+CREATE_KEY_URL = KEYS_URL.rstrip("/") + "/create/"
+
 # The error codes the auth layer answers 401 with. Anything else in a 401 body
 # was written by someone who meant it, and is left alone.
 _REWRITABLE_ERRORS = {"invalid_token", "invalid_request", "unauthorized", "invalid_client"}
@@ -52,7 +56,8 @@ _NO_CREDENTIAL = {
         "This MCP server needs to know who you are. Two ways in: connect with "
         "OAuth — an MCP client does this for you by following the "
         "WWW-Authenticate header on this response — or send a Pexafy API key "
-        f"yourself as 'Authorization: Bearer pexafy_api_...'. Create a key at {KEYS_URL}."
+        "yourself as 'Authorization: Bearer pexafy_api_...'. Create an MCP Agent key "
+        f"at {CREATE_KEY_URL}."
     ),
     "keys_url": KEYS_URL,
 }

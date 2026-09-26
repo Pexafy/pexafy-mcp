@@ -4,6 +4,16 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **The 401 links to the form that creates a key.** With no credential, the body said
+  "Create a key at https://pexafy.com/dashboard/api-keys" — the list of keys, one click
+  short for a caller who has none. It now says "Create an MCP Agent key at
+  https://pexafy.com/dashboard/api-keys/create/": the form itself, and the client origin
+  to pick there. `keys_url` and the refused-credential message still point at the list,
+  where an existing key can be shown again.
+
 ## [0.4.12] — 2026-08-28
 
 ### Fixed

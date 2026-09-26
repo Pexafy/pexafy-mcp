@@ -75,6 +75,13 @@ def test_a_caller_with_no_credential_is_told_both_ways_in(guarded_app):
     assert body["keys_url"] == "https://pexafy.com/dashboard/api-keys"
 
 
+def test_a_caller_with_no_key_is_sent_to_the_form_that_makes_one(guarded_app):
+    """The list of keys is one click short for a caller who has none: the sentence
+    links the creation form and names the client origin to pick there."""
+    description = _post(guarded_app).json()["error_description"]
+    assert "Create an MCP Agent key at https://pexafy.com/dashboard/api-keys/create/." in description
+
+
 def test_a_refused_credential_gets_the_other_message(guarded_app):
     """"You sent nothing" and "what you sent was refused" are different problems.
 
