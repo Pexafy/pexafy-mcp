@@ -1,0 +1,35 @@
+{
+  "name": "pexafy",
+  "displayName": "Pexafy",
+  "version": "1.0.0",
+  "minClientVersions": {
+    "cursor": "3.13.0"
+  },
+  "description": "Find free stock photos by describing the scene or giving a reference image, each with its credit line.",
+  "author": {
+    "name": "Pexafy",
+    "email": "support@pexafy.com"
+  },
+  "homepage": "https://pexafy.com/mcp/",
+  "repository": "https://github.com/Pexafy/pexafy-mcp",
+  "license": "MIT",
+  "logo": "assets/logo.png",
+  "keywords": [
+    "pexafy",
+    "photos",
+    "stock photos",
+    "free photos",
+    "images",
+    "image search",
+    "mcp apps",
+    "mcp"
+  ],
+  "category": "integrations",
+  "tags": [
+    "photos",
+    "images",
+    "design",
+    "mcp"
+  ],
+  "mcpServers": "./mcp.json"
+}
