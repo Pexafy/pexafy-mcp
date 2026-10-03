@@ -1,51 +1,38 @@
-"""Streamable-HTTP session housekeeping the SDK does not do for us.
+"""Streamable-HTTP session housekeeping the SDK does not do on its own.
 
-Two things live here, both of them consequences of one fact: MCP clients have
-started speaking protocol revision **2026-07-28**, and the SDK this server runs
-on (`mcp` 1.x) tops out at 2025-11-25.
+Two things live here, both consequences of one fact: MCP clients have started
+speaking protocol revision **2026-07-28**, while the SDK this server runs on
+(`mcp` 1.x) tops out at 2025-11-25.
 
 1. **The discovery probe.** A 2026-07-28 client opens with a sessionless
    `server/discover` POST, asking what the server can do before any handshake.
-   The SDK does not know the method. Worse, it decides *first* — on the sole
-   fact that the request carries no `Mcp-Session-Id` — to build a whole new
-   transport and register it in `_server_instances`, and only *then* reads the
-   body, finds no `initialize`, and answers `400 Bad Request: Missing session
-   ID`. The client shrugs, falls back to the legacy handshake, and everything
-   works. But the transport it created is now unreachable — no client holds its
-   id — and nothing ever removes it.
+   The SDK does not know the method, and it decides *first* — on the sole fact
+   that the request carries no `Mcp-Session-Id` — to build a transport and
+   register it in `_server_instances`, only *then* reading the body, finding no
+   `initialize`, and answering `400 Bad Request: Missing session ID`. The client
+   falls back to the legacy handshake and everything works, but the transport it
+   created is unreachable (no client holds its id) and nothing removes it.
 
-   Measured on production over 21 hours: 120 transports created, 4 closed. 49 of
-   the 120 came from this path, and 41 of those 49 carried the `Mcp-Method:
-   server/discover` header this module keys on. Each costs ~42 KB of RSS
-   (measured, 500 probes against a local build), so the waste is ~2 MB/day today
-   and grows with the traffic.
+   `install()` answers the probe *before* the SDK can allocate anything. The
+   reply is the same status and the same JSON-RPC error body, byte for byte, so
+   client behaviour is unchanged. The one header dropped is `Mcp-Session-Id`,
+   which the SDK sets to the id of the transport it just orphaned.
 
-   `install()` therefore answers the probe *before* the SDK can allocate
-   anything. The reply is the same status, the same JSON-RPC error body, byte
-   for byte — clients see exactly what they see today and fall back exactly as
-   they do today. The one header dropped is `Mcp-Session-Id`, which the SDK sets
-   to the id of the transport it just orphaned: over 149 such ids handed out in
-   production, not one was ever sent back by a client.
-
-   The guard is deliberately narrow. It fires only on a POST that carries
+   The guard is narrow: it fires only on a POST carrying
    `Mcp-Method: server/discover` **and no `Mcp-Session-Id`**, and it never reads
-   the request body — so the body stream reaches the SDK untouched, and the case
-   that matters is left alone: Claude-User sends `server/discover` *inside* an
-   established session (9 times in the same window), takes a different 400 from
-   the SDK, and carries on using that session. That request keeps its session
-   header, so it never reaches this shortcut.
+   the request body, so the body stream reaches the SDK untouched. That matters
+   because `server/discover` also arrives *inside* an established session, where
+   it must keep reaching the SDK — such a request carries a session header, so it
+   never reaches this shortcut.
 
-   The remaining 8 orphans of the 49 arrive with no `Mcp-Method` header at all.
-   Catching those would mean parsing the body here to prove it is not an
-   `initialize` — reading the stream that the SDK must read next. Not worth the
-   risk for 16% of a 2 MB/day leak.
+   A probe that arrives with no `Mcp-Method` header at all is left to the SDK:
+   catching it would mean parsing the body here to prove it is not an
+   `initialize`, reading the stream the SDK must read next.
 
-2. **The gauge.** `open_sessions()` reports how many transports the manager is
-   holding, so `/metrics` can publish it and Grafana can show the curve. The
-   sessions themselves are left alone on purpose: the SDK can expire idle ones,
-   but the longest silence a real client took before coming back was 3 h 36 in
-   that same window, so any timeout short enough to be useful would also cut
-   live users. Watch first, decide later.
+2. **The gauge.** `open_sessions()` reports how many transports the manager
+   holds, so `/metrics` can publish it. The sessions themselves are left alone:
+   the SDK can expire idle ones, but real clients go quiet for hours and come
+   back, so a timeout short enough to reclaim memory would also cut live users.
 """
 
 from __future__ import annotations
@@ -137,7 +124,7 @@ def open_sessions() -> int | None:
     `_server_instances` is private to the SDK, but FastMCP's own lifespan reaches
     for the same attribute to drain it on shutdown. If a future release renames
     it this returns None and says so in the log rather than reporting a
-    plausible-looking zero — a metric that lies is worse than a missing one.
+    plausible-looking zero, which a dashboard cannot tell from a healthy one.
     """
     if _manager is None:
         return 0  # no request handled yet, so nothing is held

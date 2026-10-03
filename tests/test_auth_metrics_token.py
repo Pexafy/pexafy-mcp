@@ -1,9 +1,9 @@
 """The monitoring bearer must never be sent to Django as an OAuth token.
 
-Prometheus scrapes /metrics with it every 15 s. From 2026-08-26 the auth
-middleware resolved it against /oauth/mcp/resolve on every scrape: 5 760 × 401 a
-day on the Django side and the same "Token resolution rejected" line a real
-failure produces, 240 times an hour, in this server's log.
+Prometheus scrapes /metrics with it every few seconds. Resolved against
+/oauth/mcp/resolve on every scrape, it produces a 401 each time on the Django side
+and, in this server's log, the same "Token resolution rejected" line a real failure
+produces — hundreds of times an hour, burying the failures that matter.
 """
 from __future__ import annotations
 

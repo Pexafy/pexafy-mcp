@@ -4,9 +4,12 @@ WORKDIR /app
 
 # Install the package (deps + console script). Copy only what's needed to build,
 # so the layer cache survives unrelated changes.
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md constraints.txt ./
 COPY src/ ./src/
-RUN pip install --no-cache-dir .
+# `-c constraints.txt`: pyproject declares ranges, and a rebuild would otherwise
+# take whatever is newest that day — a major SDK jump arriving as a side effect of
+# an unrelated change. The file pins what production runs; see its header.
+RUN pip install --no-cache-dir -c constraints.txt .
 
 # Default to stdio, the transport an MCP client uses to drive a containerised
 # server: `docker run -i --rm pexafy-mcp` speaks MCP on stdin/stdout and answers

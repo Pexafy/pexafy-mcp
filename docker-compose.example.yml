@@ -7,6 +7,11 @@
 #   cp .env.example .env      # then set at least PEXAFY_API_KEY
 #   docker compose -f docker-compose.example.yml up -d
 #   curl localhost:8765/health
+#
+# Values come from .env (read by compose for the ${…} below). Every variable the server
+# reads is documented, with its default, in .env.example; add any other one to the
+# `environment:` block the same way. Only pass a variable through with a real default:
+# for most of them an empty value is not the same as an unset one.
 services:
   mcp:
     build: .
@@ -21,12 +26,20 @@ services:
       PEXAFY_MCP_HOST: 0.0.0.0
       PEXAFY_MCP_PORT: "8765"
 
+      # The URL clients reach this server at — behind a reverse proxy, its public https
+      # address. It names the OAuth resource (required for OAuth), gives Claude the
+      # widget domain it checks, and is where the grid posts the reader's selection.
+      # Left empty, the server announces no widget domain and opens no selection channel.
+      PEXAFY_MCP_PUBLIC_URL: ${PEXAFY_MCP_PUBLIC_URL:-}
+
       # Pexafy API root. Point it at the public API, or at your own deployment.
       PEXAFY_API_BASE_URL: ${PEXAFY_API_BASE_URL:-https://api.pexafy.com}
 
-      # Fallback API key used when a client sends none of its own. Get one at
-      # https://pexafy.com/dashboard/api-keys/ — leave empty for per-user auth,
-      # where every client passes its own key (x-api-key or Bearer).
+      # The key used when a request brings no credential of its own. Get one at
+      # https://pexafy.com/dashboard/api-keys/. Clients may send their own instead
+      # (`Authorization: Bearer` or `x-api-key`), which always takes precedence. With
+      # neither OAuth nor anonymous access configured, this key serves anyone who can
+      # reach the server — keep the port private, as above.
       PEXAFY_API_KEY: ${PEXAFY_API_KEY:-}
 
       # Analytics tag sent as the X-Source header.
@@ -38,11 +51,21 @@ services:
       # See src/pexafy_mcp/auth.py.
       PEXAFY_OAUTH_RESOLVE_URL: ${PEXAFY_OAUTH_RESOLVE_URL:-}
       PEXAFY_OAUTH_AS_URL: ${PEXAFY_OAUTH_AS_URL:-}
-      PEXAFY_MCP_PUBLIC_URL: ${PEXAFY_MCP_PUBLIC_URL:-}
       MCP_RESOLVE_SECRET: ${MCP_RESOLVE_SECRET:-}
 
-      # ── Optional: inline result grid ─────────────────────────────────────────
-      # The grid needs a thumbnail service whose signing secret you hold. Without
-      # these, the widget degrades off cleanly and results stay text-only.
+      # ── Account linking ──────────────────────────────────────────────────────
+      # Off here, although the code defaults to on: it declares `noauth` + `oauth2` on
+      # every tool and registers `connect_account`, which only make sense on a server
+      # that runs OAuth AND serves callers without an account (PEXAFY_ANON_* in
+      # .env.example). Set it to 1 when both are configured.
+      PEXAFY_ACCOUNT_LINKING: ${PEXAFY_ACCOUNT_LINKING:-0}
+
+      # ── Optional: inline result grid and photo files ─────────────────────────
+      # The grid and get_photo_file_by_photo_id need a thumbnail service whose signing
+      # secret you hold. Without these, both are off and results stay structured data.
       PEXAFY_THUMB_BASE_URL: ${PEXAFY_THUMB_BASE_URL:-}
       PEXAFY_THUMB_HMAC_SECRET: ${PEXAFY_THUMB_HMAC_SECRET:-}
+
+      # ── Optional: /metrics ───────────────────────────────────────────────────
+      # Bearer token Prometheus must present. Unset, the endpoint is open.
+      PEXAFY_METRICS_TOKEN: ${PEXAFY_METRICS_TOKEN:-}

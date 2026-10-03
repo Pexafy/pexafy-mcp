@@ -11,3 +11,4 @@ dist/
 
 # Local-only widget preview harness (mock data, screenshots)
 preview_local/
+docker-compose.yml

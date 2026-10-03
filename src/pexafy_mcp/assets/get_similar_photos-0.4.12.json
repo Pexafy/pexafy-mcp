@@ -1,0 +1,283 @@
+{
+  "name": "get_similar_photos",
+  "title": "Find similar photos",
+  "description": "Use this tool when the user says 'find something similar', 'show me more like this', or 'I need a visually consistent set'. Requires a photo_id obtained from a previous search result. A person normally refers to a photo by the rank shown on the result grid rather than by its identifier; each search result carries both, in the same object. Each result carries: `rank`, its position on this page (1, 2, 3, …), which is also the number drawn on the inline grid and the handle a person naturally uses to refer to one photo among several; `photo_id`, the identifier the similar-photos tool takes, present in the same object as the rank; `attribution`, the credit line to display with the photo; and `urls`, the image at several sizes, `urls.regular` being the one to link to. Inline thumbnails are attached to this tool's result as an MCP App resource. Some clients, claude.ai on the web among them, render that resource only inside an expandable tool panel rather than in the reply itself; where it is not rendered, the photos remain reachable through their URLs.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "photo_id": {
+        "type": "string",
+        "title": "Photo Id",
+        "description": "The reference photo's unique Pexafy identifier (a UUID)."
+      },
+      "cursor": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "title": "Cursor",
+        "description": "Token to fetch the next page. Take `pagination.next_cursor` from a previous response and pass it back here. See the Pagination guide."
+      }
+    },
+    "required": [
+      "photo_id"
+    ],
+    "additionalProperties": false
+  },
+  "outputSchema": {
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "data": {
+        "items": {
+          "properties": {
+            "photo_id": {
+              "type": "string",
+              "description": "Unique Pexafy identifier (UUID)."
+            },
+            "image_url": {
+              "type": "string",
+              "format": "uri",
+              "description": "Canonical source image URL."
+            },
+            "urls": {
+              "properties": {
+                "thumb": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "small": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "regular": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "large": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "full": {
+                  "type": "string",
+                  "format": "uri"
+                }
+              },
+              "type": "object",
+              "description": "Ready-to-use image links in five sizes."
+            },
+            "width": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "height": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "blur_hash": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "BlurHash placeholder string."
+            },
+            "orientation": {
+              "type": "string",
+              "enum": [
+                "landscape",
+                "portrait",
+                "square"
+              ]
+            },
+            "color_name": {
+              "type": "string",
+              "description": "Dominant color name."
+            },
+            "color_hex": {
+              "type": "string",
+              "description": "Dominant color hex code."
+            },
+            "photographer_username": {
+              "type": "string"
+            },
+            "photographer_full_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "photographer_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri"
+            },
+            "source": {
+              "type": "string",
+              "description": "Provider (e.g. `Pexels`, `Unsplash`, `Pixabay`)."
+            },
+            "license_type": {
+              "type": "string",
+              "description": "License type (e.g. `free`)."
+            },
+            "source_image_url": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "uri",
+              "description": "URL of the photo's page on the provider."
+            },
+            "source_description": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "AI-generated caption."
+            },
+            "alt_description": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Accessibility-friendly text."
+            },
+            "uploaded_on": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Publication date (YYYY-MM-DD)."
+            },
+            "relevance_score": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Match score 0–1 (higher is better). Only on search results."
+            },
+            "attribution": {
+              "properties": {
+                "html": {
+                  "type": "string",
+                  "description": "HTML attribution snippet."
+                },
+                "plain": {
+                  "type": "string",
+                  "description": "Plain-text attribution."
+                }
+              },
+              "type": "object",
+              "description": "Ready-to-display credit for the photographer/source."
+            }
+          },
+          "type": "object",
+          "description": "A photo result. Fields returned can be narrowed with the `fields` parameter and may depend on your plan."
+        },
+        "type": "array"
+      },
+      "meta": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "description": "Unique id for this request (quote it in support tickets)."
+          },
+          "took_ms": {
+            "type": "number",
+            "description": "Server processing time in milliseconds."
+          }
+        },
+        "type": "object"
+      },
+      "error": {
+        "anyOf": [
+          {
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Machine-readable error code (e.g. `MISSING_PARAMS`, `PHOTO_NOT_FOUND`)."
+              },
+              "message": {
+                "type": "string",
+                "description": "Human-readable error message."
+              },
+              "request_id": {
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "pagination": {
+        "anyOf": [
+          {
+            "properties": {
+              "next_cursor": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Pass back as `cursor` for the next page; `null` when `has_more` is false."
+              },
+              "per_page": {
+                "type": "integer",
+                "description": "Number of items per page."
+              },
+              "has_more": {
+                "type": "boolean",
+                "description": "Whether another page exists."
+              }
+            },
+            "type": "object"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    },
+    "type": "object",
+    "x-fastmcp-top-level-schema": "PhotoListResponse"
+  },
+  "annotations": {
+    "title": "Find similar photos",
+    "readOnlyHint": true,
+    "destructiveHint": false,
+    "idempotentHint": true,
+    "openWorldHint": true
+  },
+  "_meta": {
+    "ui": {
+      "resourceUri": "ui://pexafy/grid.html"
+    },
+    "fastmcp": {
+      "tags": [
+        "Photos"
+      ]
+    }
+  }
+}

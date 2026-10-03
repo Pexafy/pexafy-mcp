@@ -776,6 +776,27 @@
       "description": "Maximum TOTAL number of similar photos across all pages — NOT the page size (use `per_page` for that). Omit for no cap."
      },
      {
+      "name": "orientation",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Keep only the neighbours of these shapes: `landscape`, `portrait`, `square`. Repeatable — `?orientation=portrait&orientation=square` returns either. Optional: omitted, every shape comes back, which is what this endpoint has always returned. A value outside the three is ignored, as it is on `/search/photos`.",
+       "title": "Orientation"
+      },
+      "description": "Keep only the neighbours of these shapes: `landscape`, `portrait`, `square`. Repeatable — `?orientation=portrait&orientation=square` returns either. Optional: omitted, every shape comes back, which is what this endpoint has always returned. A value outside the three is ignored, as it is on `/search/photos`."
+     },
+     {
       "name": "cursor",
       "in": "query",
       "required": false,

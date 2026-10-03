@@ -1,46 +1,37 @@
-"""Say something useful in the 401, instead of only half of it.
+"""Give the 401 a body worth reading.
 
-The MCP spec's 401 is a header: `WWW-Authenticate` names the protected-resource
-metadata, and a client that speaks OAuth follows it. That covers every client
-that speaks OAuth. It covers nobody else, and production has both.
+The MCP spec answers an unauthenticated request with a header: `WWW-Authenticate`
+names the protected-resource metadata, and a client that speaks OAuth follows it.
+That covers every client that speaks OAuth, and nobody else.
 
-20 August 2026, one visitor, four residential IPs, two hours:
+This server also accepts a plain Pexafy API key as the bearer (see auth.py), and
+neither answer a caller receives mentions it: with no credential the body is empty,
+and with a credential the SDK refuses the body is OAuth advice — "clear the stored
+tokens and reconnect" — which is a dead end for a client that holds no tokens.
 
-    21:38 → 23:49   151 requests to /mcp, 50 of them carrying a credential
-                    66 matching token rejections logged on the Django side
-                    not one `.well-known` document ever fetched
-                    never came back
+So: keep the status, keep the header, and make both bodies name the two ways in. The
+wording differs because the situations do — "you sent nothing" and "what you sent was
+refused" are not the same problem.
 
-He was not lost in the OAuth chain — he never entered it. His client does not
-speak OAuth. This server also accepts a plain Pexafy API key as the bearer (see
-auth.py), which was exactly what he needed, and neither of the two answers he
-received mentioned it:
-
-  - with no credential, the body is **empty** — 1741 such responses over two
-    months, the most common answer this server gives;
-  - with a credential the SDK refuses, the body is 301 bytes of OAuth advice
-    ("clear the stored tokens and reconnect, your client will re-register"),
-    which is a dead end for a client that has no tokens to clear.
-
-So: keep the status, keep the header, and make both bodies say the two ways in.
-The wording differs because the situations do — "you sent nothing" and "what you
-sent was refused" are not the same problem, and a person debugging at 23:49
-deserves to know which one they have.
-
-Nothing else is touched. A 401 that is neither empty nor one of the SDK's own
-JSON refusals passes through byte for byte, and so does every other status.
+Nothing else is touched. A 401 that is neither empty nor one of the SDK's own JSON
+refusals passes through byte for byte, and so does every other status.
 """
-
 from __future__ import annotations
 
 import json
-import logging
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
-logger = logging.getLogger(__name__)
+from . import limits
 
-KEYS_URL = "https://pexafy.com/dashboard/api-keys"
+# The page that lists a caller's API keys: the one the key-limit message names, set by
+# the same variable (PEXAFY_CONNECTORS_URL). Its default keeps the trailing slash;
+# without it Django answers with a redirect.
+KEYS_URL = limits.CONNECTORS_URL
+
+# The form that makes a key, which every 401 links, in its prose and in `keys_url`:
+# the list above is one click short of it. "MCP Agent" is the client origin to pick there.
+CREATE_KEY_URL = KEYS_URL.rstrip("/") + "/create/"
 
 # The error codes the auth layer answers 401 with. Anything else in a 401 body
 # was written by someone who meant it, and is left alone.
@@ -52,18 +43,39 @@ _NO_CREDENTIAL = {
         "This MCP server needs to know who you are. Two ways in: connect with "
         "OAuth — an MCP client does this for you by following the "
         "WWW-Authenticate header on this response — or send a Pexafy API key "
-        f"yourself as 'Authorization: Bearer pexafy_api_...'. Create a key at {KEYS_URL}."
+        "yourself as 'Authorization: Bearer pexafy_api_...'. Create an MCP Agent key "
+        f"at {CREATE_KEY_URL}."
     ),
-    "keys_url": KEYS_URL,
+    "keys_url": CREATE_KEY_URL,
 }
 
 _REFUSED_DESCRIPTION = (
     "The credential you sent was not accepted. If you are using a Pexafy API "
     "key, send the whole key — it starts with 'pexafy_' — as 'Authorization: "
-    f"Bearer pexafy_api_...'; create or copy one at {KEYS_URL}. If you are using "
-    "OAuth, the access token has expired or was revoked: reconnect the connector "
-    "to get a new one."
+    f"Bearer pexafy_api_...'; create an MCP Agent key at {CREATE_KEY_URL}. If you "
+    "are using OAuth, the access token has expired or was revoked: reconnect the "
+    "connector to get a new one."
 )
+
+
+# The two 401s anonymous.py answers on purpose (anonymous.SIGN_IN_SCOPE_KEY). The host
+# shows its own sign-in prompt; these words reach the model only when the person
+# declines it — measured in VS Code, which then hands the body over as the tool's
+# answer. They say what to do next, and nothing that sends the model looking for a key.
+_SIGN_IN_BODIES = {
+    # Measured with Copilot's small model (2026-10-01): "asked to sign in again" read as
+    # an instruction to sign in, and it called connect_account — another prompt. The
+    # action comes first, and connect_account is named only to be ruled out.
+    "start": (
+        "The person declined to sign in. Call the same tool again now, with the same "
+        "arguments: it works without an account. Do not call connect_account unless the "
+        "person asks to sign in."
+    ),
+    "connect": (
+        "The person declined to sign in. Carry on: searching works without an account. "
+        "Do not call connect_account again unless the person asks to sign in."
+    ),
+}
 
 
 def _presented_a_credential(scope: Scope) -> bool:
@@ -72,6 +84,9 @@ def _presented_a_credential(scope: Scope) -> bool:
 
 def _rewrite(scope: Scope, body: bytes) -> bytes | None:
     """The body to send instead, or None to leave the response as it is."""
+    sign_in = _SIGN_IN_BODIES.get(scope.get("pexafy.sign_in") or "")
+    if sign_in:
+        return json.dumps({"error": "unauthorized", "error_description": sign_in}).encode()
     if not body:
         return json.dumps(_NO_CREDENTIAL).encode()
     try:
@@ -88,7 +103,7 @@ def _rewrite(scope: Scope, body: bytes) -> bytes | None:
             "error_description": _REFUSED_DESCRIPTION
             if _presented_a_credential(scope)
             else _NO_CREDENTIAL["error_description"],
-            "keys_url": KEYS_URL,
+            "keys_url": CREATE_KEY_URL,
         }
     ).encode()
 
