@@ -9,19 +9,7 @@ sandbox. Each keeps its own licence; full texts are in [`licenses/`](licenses/).
 
 ---
 
-## 1. Inter (typeface)
-
-- **Files:** `src/pexafy_mcp/assets/inter-latin.woff2`, `src/pexafy_mcp/assets/inter-latin-ext.woff2`
-- **Upstream:** https://github.com/rsms/inter
-- **Licence:** SIL Open Font License 1.1 — [`licenses/OFL-1.1-Inter.txt`](licenses/OFL-1.1-Inter.txt)
-- **Copyright:** Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
-
-Subset to the Latin and Latin-Extended ranges and inlined (base64) into the result-grid
-widget. The font files themselves are unmodified in outline or metadata.
-
----
-
-## 2. @modelcontextprotocol/ext-apps
+## 1. @modelcontextprotocol/ext-apps
 
 - **File:** `src/pexafy_mcp/assets/ext_apps_bundle.js` (version 1.7.4, browser bundle)
 - **Upstream:** https://github.com/modelcontextprotocol/ext-apps
@@ -42,7 +30,7 @@ claude.ai app sandbox blocks external script imports. No other change is made.
 
 ---
 
-## 3. Zod
+## 2. Zod
 
 - **Bundled inside:** `src/pexafy_mcp/assets/ext_apps_bundle.js`
 - **Upstream:** https://github.com/colinhacks/zod
@@ -54,7 +42,7 @@ notice is reproduced here.
 
 ---
 
-## 4. @standard-schema/spec
+## 3. @standard-schema/spec
 
 - **Bundled inside:** `src/pexafy_mcp/assets/ext_apps_bundle.js`
 - **Upstream:** https://github.com/standard-schema/standard-schema
@@ -65,6 +53,6 @@ notice is reproduced here.
 
 ## Regenerating the vendored assets
 
-`./prepare.sh` refreshes `assets/openapi.json`, `assets/facets.json` and
-`assets/ext_apps_bundle.js`. If it pulls a **new version** of the ext-apps bundle, re-check
-this file: the version number above, and whether the bundle's own dependency set changed.
+`./prepare.sh` refreshes `assets/openapi.json` and `assets/ext_apps_bundle.js`. If it
+pulls a **new version** of the ext-apps bundle, re-check this file: the version number
+above, and whether the bundle's own dependency set changed.

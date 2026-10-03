@@ -3,20 +3,19 @@
 RFC 9728 §3.1 puts the document under the resource's own path —
 `/.well-known/oauth-protected-resource/mcp` here — and that is what FastMCP
 registers. But a client that probes the bare `/.well-known/oauth-protected-resource`
-and gets a 404 concludes the server has no authentication at all. Glama did
-exactly that: it listed this connector as "No Auth", then failed its connection
-test against a server that had answered 401 with a `WWW-Authenticate` header
-pointing straight at the real document.
+and gets a 404 concludes the server has no authentication at all, and reports it as
+unauthenticated even after receiving a 401 whose `WWW-Authenticate` header points
+straight at the real document.
 
 So both paths must answer, with the same bytes.
 """
-import os
-
 import pytest
+
+from pexafy_mcp import server as server_module
 
 OAUTH_ENV = {
     "PEXAFY_MCP_TRANSPORT": "http",
-    "PEXAFY_OAUTH_RESOLVE_URL": "http://django/oauth/mcp/resolve",
+    "PEXAFY_OAUTH_RESOLVE_URL": "http://django.invalid/oauth/mcp/resolve",
     "MCP_RESOLVE_SECRET": "test-secret",
     "PEXAFY_OAUTH_AS_URL": "https://pexafy.com",
     "PEXAFY_MCP_PUBLIC_URL": "https://mcp.pexafy.com",
@@ -27,17 +26,8 @@ CANONICAL = "/.well-known/oauth-protected-resource/mcp"
 
 
 @pytest.fixture
-def oauth_app(monkeypatch):
-    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
-        monkeypatch.delenv(key, raising=False)
-    for key, value in OAUTH_ENV.items():
-        monkeypatch.setenv(key, value)
-
-    import importlib
-
-    from pexafy_mcp import server
-
-    importlib.reload(server)
+def oauth_app(reload_with_env):
+    server = reload_with_env(server_module, OAUTH_ENV)
     return server.build_server().http_app()
 
 
@@ -75,20 +65,9 @@ def test_the_openai_challenge_is_absent_until_a_token_is_configured(oauth_app):
     assert _get(oauth_app, "/.well-known/openai-apps-challenge").status_code == 404
 
 
-def test_the_openai_challenge_returns_the_bare_token(monkeypatch):
+def test_the_openai_challenge_returns_the_bare_token(reload_with_env):
     """OpenAI's check expects the token itself — no JSON, no wrapper."""
-    import importlib
-    import os
-
-    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
-        monkeypatch.delenv(key, raising=False)
-    for key, value in OAUTH_ENV.items():
-        monkeypatch.setenv(key, value)
-    monkeypatch.setenv("OPENAI_APPS_CHALLENGE", "token-abc123")
-
-    from pexafy_mcp import server
-
-    importlib.reload(server)
+    server = reload_with_env(server_module, {**OAUTH_ENV, "OPENAI_APPS_CHALLENGE": "token-abc123"})
     response = _get(server.build_server().http_app(), "/.well-known/openai-apps-challenge")
     assert response.status_code == 200
     assert response.text == "token-abc123"

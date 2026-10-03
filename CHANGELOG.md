@@ -4,13 +4,416 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] — 2026-10-03
+
+In short: five tools where there were three, a search surface of one sentence and one
+shape, a grid that becomes the place to choose photographs, and optional access for
+callers with no account. A host still holding the 0.4.x tool list keeps working — see
+**Deprecated**.
+
+### Added
+- **`get_photo_file_by_photo_id` — the photograph itself.** A link is enough to show a
+  photo, not to work on one: asked to crop a chosen photograph, an assistant holding only
+  its URL said the file was not available and asked the person to send it. The tool
+  returns one photo as a file — a line naming it (file name, size, the dimensions
+  served, licence, source, `photo_id`, its page at the source, the credit line to
+  display), the image as MCP image content, at most 1280 pixels wide, and — for ChatGPT —
+  the same bytes as an embedded resource, the form a host can attach. Other hosts get one
+  copy: Claude caps a tool result (about 150,000 characters on claude.ai, 25,000 tokens
+  in Claude Code). `PEXAFY_PHOTO_FILE_RESOURCE` (`auto` by default) forces the copy for
+  every host or for none. Unsplash and Pexels files come from their own CDN at 1280 pixels,
+  since the thumbnail proxy holds Unsplash at 1080; the others from the proxy's
+  permanent 1280-pixel file. A file over 6 MB is refused rather than truncated.
+  Registered only when the thumbnail proxy is configured.
+- **`get_grid_selected_photos` — what the person liked.** The grid tells the model what
+  the reader likes through the host's own channels (`ui/update-model-context`, and
+  `modelContent` in ChatGPT's `setWidgetState`), and ChatGPT still answered that the
+  selection was not available to it (openai/openai-apps-sdk-examples#221). So the grid
+  also posts the selection to the server — `POST /selection`, with a write token the
+  server signs and hands to that grid in the `_meta` of the answer it draws — and this
+  tool reads it back: every liked photo in order, `rank` #1..#n as drawn on them, with
+  its metadata, plus `selection_count` and a `note`. A selection older than the last grid
+  sent to the same caller is not served: keyed on the person alone, a shortlist from an
+  earlier conversation was once returned as the current one. Kept in memory for an hour;
+  `PEXAFY_SELECTION_TOOL=0` removes the tool. Registered only when the thumbnail proxy is
+  configured: without it there is no grid, and nothing to like.
+- **`connect_account` — attach an account without running out first.** It searches
+  nothing: its answer is a refusal carrying `_meta["mcp/www_authenticate"]`, which is
+  what makes ChatGPT open its own OAuth flow. An already connected caller is told so.
+  With `check_only` — set by the grid, or for a question about the connection — it
+  reports the connection and the current allowance without opening anything and without
+  spending a search.
+- **`photo_id` as a reference of `search_photos_by_image`.** "More like this one" is a
+  search whose reference is a Pexafy photo: the tool posts `photo_id` and the words that
+  photo was found under to `POST /api/v1/search/photos`, which keeps the neighbours on
+  the subject. `GET /photos/{id}/similar`, behind 0.4.x's `get_similar_photos`, took the
+  photo alone and drifted a step at a time — a red bicycle against a wall became walls.
+  Exactly one reference is taken among `photo_id`, `image_url`, `image_file` and
+  `image_base64`; two are refused before anything is fetched.
+- **Access without an account, off by default.** With `PEXAFY_ANON_ENABLED` and
+  `PEXAFY_ANON_SECRET`, a caller who sends no credential is served on the API's daily
+  allowance for callers without an account. The server works out who they are —
+  ChatGPT's `openai/subject`, marked as attested when the request comes from an address
+  on OpenAI's published list, or else the caller's IP address — and tells the API in a
+  signed, short-lived `X-Pexafy-Principal` header next to its service key
+  (`PEXAFY_API_KEY`); the API verifies it before counting. An address that stands for a
+  crowd names nobody: Claude.ai's egress range gets the 401 that starts OAuth rather than
+  one allowance shared by every Claude user. Such a request is let past FastMCP's
+  authentication with a per-process synthetic bearer that no client can present. The
+  identity sources are ordered and configurable (`PEXAFY_ANON_SOURCES`; `mcp-session` is
+  opt-in).
+- **Account linking.** Every tool declares both `noauth` and `oauth2` in
+  `securitySchemes` — and in `_meta["securitySchemes"]`, OpenAI's mirror for clients that
+  only read `_meta`: usable without an account, and able to take one. On by default;
+  `PEXAFY_ACCOUNT_LINKING=0` removes it and `connect_account`. The challenge is attached
+  when someone asks for it, not at every spent allowance (`PEXAFY_LINK_AT_WALL`): at the
+  wall, ChatGPT's dialog told someone who had never connected that their connection had
+  expired, and after "Not now" the model invented results. Its `error` code is a setting
+  (`PEXAFY_LINK_ERROR`), because the host writes its own words from it; an empty one
+  falls back to `insufficient_scope`, since OpenAI requires both `error` and
+  `error_description`.
+- **The allowance, before it is gone.** The API's `X-Plan`, `X-Quota-*` and
+  `X-Daily-Quota-*` headers become `budget` on the answer (what is left, once 80% is
+  spent, `PEXAFY_BUDGET_WARN_AT`: the numbers and one sentence) and, for the grid
+  alone, `_meta["pexafy/account"]` (who is asking — the way to sign in, or a signed-in
+  state — and the wording and button of the allowance panel). A spent daily or monthly
+  allowance comes back as an empty result with a `notice`, which the grid draws in
+  place of the photos (`PEXAFY_BUDGET_WALL_GRID=0` returns a tool error instead). The
+  wording follows OpenAI's rules: it states the limit, says once that a free account
+  lifts the daily one, and sells nothing; a signed-in caller who runs out is offered no
+  plan, only an informational page when `PEXAFY_ACCOUNT_OPTIONS_URL` names one.
+- **Server `instructions`.** 0.4.x sent none. They say which needs should reach this
+  server, what it is not for, and which tool answers what — under 2,048 characters,
+  where Claude Code cuts them. They name no other service and state no preference
+  against one.
+- **A prompt, `find_photos`** (argument `scene`), that a person picks from their
+  client's menu.
+- **Model-facing metadata:** `openai/toolInvocation/invoking` and `invoked` status texts
+  on every tool, `openai/widgetDescription` on the grid, and `anthropic/alwaysLoad` on
+  `search_photos`, so that Claude Code loads the entry point without searching for it.
+- **Two HTTP routes:** `POST /selection`, where the grid writes the selection (open CORS,
+  `text/plain` so that no preflight is needed, body capped), and `GET /widget`, the grid
+  as a web page for a site that embeds it (`frame-ancestors` from
+  `PEXAFY_WIDGET_FRAME_ANCESTORS`).
+- **What a host sends, in the log** (`observe.py`): one line per message with the names
+  of the `_meta` keys the host sent, and a digest — never the value — of
+  `openai/subject`, the identifier OpenAI sends "for the purposes of rate limiting and
+  identification". Nothing of `openai/session` or `openai/organization` beyond their
+  names: this server has no use for a conversation or a workspace id.
+- **`constraints.txt`.** The image is built against the dependency set production runs:
+  a rebuild would otherwise have pulled fastmcp 4 and mcp 2. `fastmcp` is also capped
+  below 4 in `pyproject.toml`; the first build after fastmcp 4 shipped died at import.
+  `redis`, which the store needs (`PEXAFY_REDIS_URL`) and the 0.4.12 image lacks, is
+  pinned there to the version the suite runs on.
+- **A skill for ChatGPT plugins**, `skills/find-stock-photos/`.
+
+### Changed
+- **The search surface is one sentence and one shape.** `q` is `english_search_sentence`
+  on the tool surface — the request still sends `q` — required, 1 to 250 characters. A
+  longer or blank one is refused by the server with a message saying what to send:
+  `maxLength` only binds clients that validate, and a 341-character sentence went
+  through whole while past about 500 the API answered an unreadable 422. `orientation`
+  is `explicit_orientation_filter`, a list of `landscape`, `portrait` and `square` that
+  OR together; a bare string is read as a one-item list, and any other value is refused,
+  since the API ignores an unknown shape and would return an unfiltered grid as a
+  filtered one. Every other filter left the tools: `color_name`, `color_hex`,
+  `color_tolerance`, `source`, `license_type`, `after_date`, `photographer`, `cursor`,
+  and `text_alpha` on the by-image search. An assistant fills in whatever a tool offers:
+  in September, unrequested filters rode on nearly every search — a brand
+  palette read as the photo's dominant colour cut the catalogue to 0.25% and kept none of
+  the sixteen unfiltered results, and `license_type=free`, true of 99.8% of the
+  catalogue, changed nothing on nearly all of them. The REST API keeps every filter. The kept
+  parameters are an allow-list, so a parameter the API gains later cannot reach a tool.
+- **Words can go with an image.** `english_search_sentence` is optional on
+  `search_photos_by_image`: with a `photo_id`, the words that photo was found under;
+  with an image, only the change asked for ("like this but at night"). `text_alpha` is
+  not sent, so the API's own balance applies.
+- **One page of 16.** The page size is set by the server, and the paging block is gone
+  from answers and schemas: the grid is a single page.
+- **Leaner results.** Each photo loses the fields nobody read — `blur_hash`,
+  `relevance_score`, `color_hex`, `color_name`, `source_photo_id`, `image_url`,
+  `description`, `source_description`, `photographer_url`, `photographer_username`,
+  `uploaded_on` — `urls` keeps `regular` only and `attribution` keeps `plain` only:
+  sixteen photos with 25 fields were 36,784 characters of the model's context on every
+  search. The output schema declares exactly what is sent, what the server adds included
+  (`rank`, `preview_url`, `preview_url_large`, `budget`, `notice`): a
+  host that validates `structuredContent` may drop anything undeclared, and the budget
+  notice went missing that way. `search_photos_by_image` declares the same schema as
+  `search_photos`.
+- **Nothing in an answer that the request does not need** (OpenAI's "response
+  minimization"). The API's `meta` (`request_id`, `took_ms`) and the `request_id` of its
+  error object leave the answer and the declared schema; `account` and `budget` no longer
+  name the plan; `get_grid_selected_photos` no longer returns `selection_revision`. The
+  grid's link to the answer on pexafy.com (`cta`) moves from `structuredContent` to the
+  result's `_meta`, as `pexafy/cta`, where the grid reads it; so do the `account` block
+  and the grid's half of `budget` (`short`, `title`, `detail`, `cta_label`,
+  `account_url`), as `pexafy/account` — `budget` keeps its numbers, `state`,
+  `signed_in` and `message`.
+- **`rank` is data, not a drawing.** Every result still carries its place in the
+  answer — the handle a client without the grid uses for "the second one" — but the
+  grid no longer paints it on the tiles. The only numbers on screen are the liked
+  photos' #1..#n.
+- **The grid's image links move to `_meta`** (`pexafy/previews`), the half of a result
+  the model does not read; they were 28% of what was left of a search.
+  `PEXAFY_PREVIEWS_CHANNEL` picks `both` (the default), `meta` or `content`.
+- **Where the person sees the grid, the model reads the photographs without their
+  links.** Handed every image link, the model showed the photographs again under the
+  grid, one picture after another (Cursor, 2026-10-01). In a host that shows the grid —
+  one that declares MCP Apps, or ChatGPT, claude.ai, Claude Desktop, VS Code, Cursor,
+  Goose — the text of a search names each photograph by `photo_id`, description, credit
+  and licence; `structuredContent`, which some of them hand the model too, loses `urls`
+  and keeps its previews as a path without address; `get_grid_selected_photos` leaves out
+  `image_url`; `get_photo_file_by_photo_id` returns a photograph with its link. Every
+  other client reads the whole answer, links included, as in 0.4.12: Claude Code, a
+  terminal, and Codex. Through OpenAI's apps platform Codex calls as ChatGPT does — its
+  User-Agent reads `openai-mcp/1.0.0 (Codex)` — and taken for it, it was handed the
+  photographs without a single link: `(Codex)` in the User-Agent, or a `clientInfo`
+  naming Codex, now tells it apart. That is no small share of the requests that come
+  through OpenAI, beside ChatGPT's. Codex shows
+  the grid only if it declares MCP Apps itself, keeps what an OpenAI host keeps — the
+  `get_similar_photos` alias, the 0.4.12 grid's window — and is the assistant a grid
+  names there.
+- **Thumbnails outlive the conversation.** The grid's 480-pixel thumbnails were signed
+  for four hours, so a result scrolled back to the next day was blank. They now last 30
+  days, rounded up to a whole day so a photo keeps one URL all day; the viewer uses the
+  proxy's permanent 1280-pixel form.
+- **The grid is rebuilt.** Unnumbered thumbnails — 6, then 6, then 4, in two or three
+  columns set by the width — each with a ♥ and a mark for its shape. The ♥ likes a
+  photo; liked photos stay under the grid, numbered #1..#n, and the model is told on
+  every change. A tap opens a swipe deck in the grid's place — right likes, left skips,
+  up asks for more like it, down closes — full screen on a phone only. ≈ runs
+  `search_photos_by_image` with the photo's `photo_id` and the search's words from
+  inside the frame where the host proxies tool calls, repaints the grid and adds a step
+  to a trail across the head, six deep; elsewhere it asks the assistant. A shape filter
+  in the head asks the same question again for the shapes chosen. An account button sits
+  in the corner, a notice appears near the end of an allowance, and a wall takes the
+  results' place once it is spent. The grid follows the host's theme, and in ChatGPT
+  keeps its view state inside `privateContent` so it survives the frame being reloaded —
+  what the answer's `_meta` said included (its link, who is asking, the allowance
+  panel's wording), since a reloaded frame may not be handed it again; a result that
+  arrives without `_meta` falls back on `window.openai.toolResponseMetadata`. It writes
+  in the platform's system font. The button under it reads "Open in Pexafy": "Full
+  results" presented a grid of sixteen as a cut-down answer. After a wall it checks for
+  two minutes at most whether the allowance came back.
+- **Titles and descriptions are rewritten** to say when to call each tool before
+  anything else, and kept under Claude Code's 2,048 characters. Every model-readable
+  text was re-read against OpenAI's app-submission rules and Anthropic's directory
+  criteria: none compares this server to another service or tells the model to prefer
+  it over one; every trigger is something the user asks for, and a piece of writing
+  that usually carries photographs gets an offer, with the search waiting for the
+  user's yes; results, refusals and the grid's context are stated as facts rather than
+  orders, and a plan limit is reported by Pexafy instead of in the assistant's voice.
+  `tests/test_served_texts_compliance.py` keeps the refused formulas out.
+- **`tools/list` puts the text search first.** FastMCP listed the hand-written tools
+  ahead of the generated one, so a router reading from the top met the by-image search
+  first.
+- **`openWorldHint` is false** on the file, selection and account tools, which only
+  read Pexafy's own state. The two searches keep it.
+- **`idempotentHint` is false on the two searches**: each call spends one search of the
+  caller's allowance, so the same call made twice is not free of effect. The file,
+  selection and account tools keep it.
+- **`serverInfo.version` is this package's version**, no longer FastMCP's.
+- **A spent allowance says what happens next**, still without an upgrade pitch. The
+  monthly message says the allowance resets on the 1st and not to retry, naming the
+  options page when one is configured. A spent daily allowance has its own message —
+  when it resets, and that a free account lifts it — instead of the rate-limit one
+  ("wait 40000s, then try once more").
+- **The 401 links to the form that creates a key.** With no credential, the body said
+  "Create a key at https://pexafy.com/dashboard/api-keys" — the list of keys, one click
+  short for a caller who has none. It now says "Create an MCP Agent key at
+  https://pexafy.com/dashboard/api-keys/create/": the form itself, and the client origin
+  to pick there. The refused-credential message links the same form ("create an MCP
+  Agent key", where it said "create or copy one"), and so does `keys_url`.
+
+### Deprecated
+Accepted for hosts still on the 0.4.x tool list, and to be removed once every directory
+has scanned 1.0.0 (`compat.py`). Each translation is logged, and the rate of those lines
+says when:
+- `get_similar_photos` → `search_photos_by_image`, with the same `photo_id`. It stays
+  in the tool list an OpenAI host reads, with the definition 0.4.12 published, byte for
+  byte (`assets/get_similar_photos-0.4.12.json`): OpenAI removes from a published app, at
+  its next scan, a tool that `tools/list` no longer names, while the by-image search
+  keeps its 0.4.12 definition, without `photo_id`, until 1.0.0's is approved: in
+  between, the app would have no way left to find photos like one already found. No
+  other host sees it, and neither `/health` nor the server card counts it.
+  `PEXAFY_SIMILAR_ALIAS=0` takes it off the list once the new tools are approved; calls
+  under the old name are answered either way;
+- the 0.4.12 grid, which ChatGPT may keep in its cache for up to an hour after the
+  deploy, under the same URI, and draw 1.0.0's answers with: it reads `structuredContent`
+  alone, where 1.0.0 gives the previews as a path without address and no `urls` wherever
+  a grid is drawn, so it would show no thumbnail and no "Open original image". Until
+  `PEXAFY_LEGACY_GRID_UNTIL` — an instant in UTC, epoch seconds or ISO 8601
+  (`2026-10-05T03:00:00Z`) — an OpenAI host's answer keeps everything that grid reads:
+  the previews as whole links, `urls` in every size, `photographer_url`,
+  `photographer_username`, `color_name`, `color_hex`, `uploaded_on`, `description`
+  (cleaned like the rest of the photograph) and `cta`. The text the model reads keeps no
+  link, `tools/list` does not change, and no other host sees a difference. Unset, empty
+  or `0`: no window; a value that is not an instant opens none and is logged as a
+  warning, and the start-up log says where the window stands. On deployment it is set to
+  the time of the deploy plus two hours;
+- `q` → `english_search_sentence`, on both searches, and so is `query`, which no tool
+  list published but assistants send in its place (`q` wins when both are sent);
+- `orientation` → `explicit_orientation_filter`, a single string widened to a list;
+- `color_name`, `color_hex`, `color_tolerance`, `source`, `license_type`, `after_date`,
+  `photographer`, `cursor` → dropped, and the search still answers; `text_alpha` →
+  dropped on the by-image search; `per_page` and `limit` → dropped too: a page size no
+  tool list offered, which the server sets itself. On production, 0.4.12 failed calls
+  on `query`, `per_page` and `limit`;
+- the names briefly served by a preview server —
+  `search_photos_from_unsplash_pexels_pixabay_by_text` and `…_by_image`,
+  `get_photo_file`, `get_selected_photos` → the current names.
+
+A 0.4.x text search sent without `q` gets a message saying the sentence is required. The
+two searches keep their 0.4.x names on purpose: OpenAI removes a tool that disappears
+from a published app at once and offers a new name only after its checks pass, so a
+rename would leave installed users without the tools in between.
+
+### Removed
+- **`get_similar_photos`** from the tool list, but an OpenAI host's (see **Deprecated**).
+- **The numbered tiles and the detail panel** of the 0.4.x grid, replaced by the deck
+  and the selection.
+- **`assets/facets.json` and `PEXAFY_FACET_BOOTSTRAP_KEY`.** With the filters gone there
+  is no value set to fetch; `prepare.sh` regenerates the OpenAPI snapshot and the
+  ext-apps bundle only.
+- **The Inter typeface** (`assets/inter-*.woff2`, its licence and notice): inlined as
+  base64, it was 178 KB of every widget served, and OpenAI's UI guidelines say "Don't use
+  custom fonts, even in full screen modes." The grid uses the system font stack.
+
+### Fixed
+- **A failed text search answers in a sentence** — "Pexafy could not run that search.",
+  followed by the API's own message — like the by-image search, instead of FastMCP's raw
+  "HTTP error 503: … {body}".
+- **A rank sent as a `photo_id`** (`6`, `"6"` or `"#6"`, on the by-image and file tools)
+  is refused with the correction: send the `photo_id` that sits beside it. The API
+  answered a malformed id with "500 — Search service temporarily unavailable", which an
+  assistant reported as an outage. Any other value that is not a UUID is told what
+  `photo_id` takes.
+- **The grid's domain is the one each host checks.** `_meta.ui.domain` carried the
+  website's URL; Claude expects the SHA-256 of this server's `/mcp` endpoint under
+  `claudemcpcontent.com`, and refused to render the grid ("Invalid ui.domain format").
+  It is now derived that way for a Claude host: a `clientInfo` naming Claude or
+  Anthropic — the session's, or the one a request carries in its `_meta` (protocol
+  2026-07-28 opens no session) — or a call from Anthropic's outbound network,
+  160.79.104.0/21, for a Claude surface whose name says neither. Every other host is
+  served `PEXAFY_WIDGET_DOMAIN`, the value `openai/widgetDomain` keeps for every host: an
+  OpenAI host, which reads the same field as the app's own origin, and a client that
+  cannot be told — OpenAI's review scans with a client whose name is not documented. The
+  log line of every `initialize` names the client and its version, which is how a
+  directory's scan is told apart.
+- **Without the grid, no text names it.** With `PEXAFY_MCP_PREVIEWS=0` or no thumbnail
+  proxy, the instructions, both searches, their parameters and `connect_account` no
+  longer speak of a grid the person does not see (a photo "liked in the Pexafy grid",
+  results that "also appear to the person as a grid", the grid's account button), and
+  the output schema no longer declares `preview_url` and `preview_url_large`, which no
+  answer carries then. With the grid, every text is unchanged.
+- **Likes the grid cannot post still reach the model.** A host may keep the grid from
+  reaching this server: in ChatGPT, a developer connector keeps the content security
+  policy it was created with, and a published app keeps the reviewed one until its
+  updated definition passes review (measured 2026-10-03: the browser refused every
+  `POST /selection`, the selection tool read 0 for two photos liked, and the assistant
+  said the selection had expired). The grid swallowed the failure. Now a failed post — a
+  refusal by the page's policy or the network, or an error status — is logged in the
+  frame, and the grid's model context carries the selection itself, numbered in the
+  reader's order (rearranged by dragging, renumbered on an unlike), as with the selection
+  tool switched off, without naming the tool and without image links. The tool's empty
+  answer says that a list in the grid's context is the selection; its "nothing liked in
+  the grid" no longer states as fact what only the store knows.
+- **The grid's CSP declares what it uses.** The thumbnail CDN is a resource domain only:
+  the grid draws thumbnails and no longer reads their bytes, so `connectDomains` names
+  this server alone (the selection it posts to `/selection`). The `/widget` page's
+  header follows the same split: `img-src`/`media-src` for the CDN, `connect-src` for
+  this server.
+- **An OpenAPI snapshot whose search endpoint moved stops the server at load time,**
+  naming the operation, instead of shipping the raw REST surface; and a parameter made
+  required can no longer stay nullable.
+- **An image served as `application/octet-stream`** (or `binary/octet-stream`, or with
+  no type at all — S3, Drive, many CDNs) is read by its first bytes like any other; it
+  was refused as "not an image" before they were looked at.
+
+### Security
+- **No search sentence, image, token, e-mail or address in clear in the log.** A refused
+  argument is logged by its kind ("a rank", "a URL", "a word", its length), never
+  quoted; FastMCP's warning about a call that fails validation loses the `input`
+  pydantic quotes (a whole base64 image, the sentence); uvicorn's access line no longer
+  starts with the caller's address, nor ends with a query string; the OAuth lines name
+  the user by a keyed digest (HMAC-SHA256 under a secret the server holds, label
+  `pexafy-log-email:v1:`), neither by e-mail nor by a plain hash, which the list of
+  accounts would reverse. httpx no longer writes the URL of every outgoing request — the
+  sentence of a text search sat in its query string, and a reference image's link, the
+  signature of a ChatGPT upload included, was the image: it is held at WARNING with
+  httpcore, and a line of this server's own (`API GET /api/v1/search/photos 200`) keeps
+  the count. The MCP SDK, FastMCP and sse_starlette never go below INFO, whatever
+  `PEXAFY_MCP_LOG_LEVEL` says (a quieter level quiets them too): their DEBUG lines are
+  whole messages.
+- **The host's request no longer reaches the API.** FastMCP's generated text search
+  copied the incoming request's headers onto the request it sends to the API: the
+  caller's address as Cloudflare and the proxies reported it (`cf-connecting-ip`,
+  `x-forwarded-for`, `x-real-ip`), its country, ChatGPT's `x-openai-subject` and
+  `x-openai-session`, cookies, `origin`, `referer`, trace ids — and any header a client
+  added, the API's internal headers and a made-up `X-Pexafy-Principal` included. The
+  API writes the address of every call to
+  its call log, kept 90 days. Every request to the API is now rebuilt on an allow-list:
+  HTTP's own headers and the client's defaults (its user agent, `x-api-key`, `X-Source`),
+  then the credential and the signed principal this server sets. The API also counts
+  searches per address, 60 a minute, and with no address every MCP caller would have
+  shared one count: the caller's address goes as a pseudonym instead, in
+  `X-Forwarded-For` — an HMAC under a key the process draws at start and keeps nowhere,
+  written as an address of `fd70:6578:6166::/48`. Each caller keeps a count of its own,
+  on the by-image search too, which shared the server's until now, and the API's log
+  holds a name nobody can turn back into the address.
+- **`image_url` can no longer reach the server's own network (SSRF).** 0.4.x downloaded
+  any http(s) URL — loopback, private ranges, link-local, cloud metadata — followed
+  redirects, read the whole body before checking its size, and echoed the status or
+  content type in its error; 1.0.0 makes the tool callable without an account. Now every
+  address the host resolves to must be public (IPv4-mapped IPv6 included), the
+  connection goes to the address that was checked (so a second DNS answer cannot move
+  it), redirects are followed by hand, at most three, each one checked, the body is read
+  as a stream and cut at 10 MB — the API's own limit, which the refusal names, less
+  16 KB: the API caps the whole multipart request, and the framing around the image
+  (its file name cut to 100 characters) must fit too — one deadline covers the whole
+  download, and the errors say nothing about what was reached.
+  A format the API does not take (anything but JPEG, PNG, WebP and AVIF, a GIF included)
+  is refused from its first bytes, from a URL or from base64, before anything is sent. `PEXAFY_IMG_ALLOW_PRIVATE=1` lifts the address
+  check for a local test.
+- **A key sent in `x-api-key` is the caller's own.** With OAuth on, FastMCP reads only
+  `Authorization`, so a key sent the other documented way was refused with a 401 — and,
+  once anonymous access exists, would be served with the service key and counted against
+  the anonymous allowance. A `pexafy_…` key in `x-api-key` is now resolved exactly like
+  the same key sent as a bearer, before anonymous access is considered.
+- **OpenAI's address list cannot leave ChatGPT callers pooled.** It is fetched by the
+  first call that needs it — not once the host's uptime has passed the refresh interval,
+  which would have left every ChatGPT caller sharing OpenAI's address as one identity
+  for up to an hour after a reboot. A failed fetch keeps the last good list and waits 60
+  seconds before the next, and only one fetch runs at a time.
+- **ChatGPT's widget state holds only its three documented keys** — `modelContent`
+  (which the model reads), `privateContent` and `imageIds`. The grid's view, and with it
+  the token that allows writing the selection, lives inside `privateContent`: a fourth
+  top-level key has undocumented handling and could reach the model.
+- **Signed, expiring credentials on the new paths.** The selection token names its
+  caller by digest and expires; the anonymous principal is HMAC-signed with a
+  five-minute lifetime, and the API verifies it rather than trusting it.
+- **The anonymous caller's name is a salted hash.** The principal's `s` was
+  `sha256("<source>:<subject>")`: for an IPv4 address, 2^32 guesses gave the address back.
+  It is now an HMAC-SHA256 keyed by `PEXAFY_ANON_SECRET` (label
+  `pexafy-anon-subject:v1:`), and the label in the log and the selection store another one
+  (`pexafy-anon-log:v1:`). The API reads `s` as opaque and needs no change; every
+  anonymous allowance starts again from zero once, on deployment.
+- **Text a third party wrote is cleaned before the model reads it.** A photograph's
+  description (`alt_description`), its photographer's name and the credit line built
+  from it are cut to 300 characters and lose their control and invisible characters — a
+  line break becomes a space; zero-width, bidirectional-override and tag characters go,
+  so do variation selectors (a VS15 or VS16 stays after an emoji), the Hangul fillers and
+  the rest of what Unicode lists as drawing nothing, and a run of joiners is cut to one,
+  kept only between two characters — in search results, in the file tool's line of text,
+  and in the selection the grid posts, which `get_grid_selected_photos` reads back.
+
 ## [0.4.12] — 2026-08-28
 
 ### Fixed
 - **The metrics token is no longer resolved as an OAuth token.** Prometheus
   scrapes `/metrics` every 15 s with the monitoring bearer; the auth middleware
   handed that bearer to Django's `/oauth/mcp/resolve` like any other, Django
-  answered 401, and the server logged "Token resolution rejected" — 5 760 times
+  answered 401, and the server logged "Token resolution rejected" — hundreds of times
   a day since 26 August, the exact line a real rejection produces. Nothing was
   broken for clients (`/metrics` checks the token itself and answered 200), but
   a genuine failure would have been invisible in that log, and Django took a
@@ -21,16 +424,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 - **The 401 now names both ways in.** The MCP spec's 401 is a header, and a
-  client that speaks OAuth follows it. Production has clients that do not. One
-  visitor, on 20 August, four residential IPs, two hours: 151 requests to
-  `/mcp`, 50 carrying a credential, 66 token rejections logged on the Django
-  side, and not one `.well-known` document ever fetched — he never entered the
-  OAuth chain, because his client cannot. This server accepts a plain Pexafy API
-  key as the bearer, which was exactly what he needed, and neither answer he got
-  mentioned it: an empty body when he sent nothing (1741 such responses over two
-  months, the most common answer this server gives), and 301 bytes of OAuth
-  advice when he sent something — "clear the stored tokens and reconnect", a
-  dead end for a client with no tokens to clear.
+  client that speaks OAuth follows it. Not every client does, and one that never
+  enters the OAuth chain gets no help from either answer: an empty body when it
+  sends nothing — the most common response this server gives — and OAuth advice
+  when it sends a credential the SDK refuses ("clear the stored tokens and
+  reconnect"), which is a dead end for a client with no tokens to clear. This
+  server also accepts a plain Pexafy API key as the bearer, and nothing said so.
 
   `unauthorized.py` fills both, with different words, because "you sent nothing"
   and "what you sent was refused" are different problems. The status, the
@@ -60,8 +459,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the same method *inside* an established session — that request keeps its
   session header and is left entirely to the SDK, which is what the tool call
   after it depends on. The dropped `Mcp-Session-Id` response header named the
-  transport the SDK had just orphaned: of 149 such ids handed out in production,
-  not one was ever sent back by a client.
+  transport the SDK had just orphaned, and no client ever sends such an id back.
 
 ### Added
 - **`/metrics` publishes the live session count.** The SDK only drops a session
@@ -114,8 +512,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   from tool generation, but still the authority on those parameters), so the two
   cannot drift; only the image inputs are written by hand. Two tests: one fails on
   any undescribed parameter of any tool, the other on any divergence from the spec.
-  It was also the single point missing from the Smithery quality score
-  (Parameter descriptions 2/3, 97/100).
+  It is also what directory quality scores measure under "parameter descriptions".
 
 ## [0.4.6] — 2026-08-20
 
@@ -129,19 +526,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   there, which is what the listing was reporting in the first place. The
   maintainer claim was never read from that URL anyway: it comes from the
   repository file, and the server page still shows the verified-maintainer badge.
-  Back to 404, like everyone else. The server card stays — that one demonstrably
-  works: it took the Smithery release from AUTH_TIMEOUT to SUCCESS.
+  Back to 404. The server card stays — that one demonstrably works: it takes a
+  directory scan from a timeout to a successful read.
 
 ## [0.4.5] — 2026-08-20
 
 ### Added
 - **Pre-connect server card at `/.well-known/mcp/server-card.json`.** A directory
-  that cannot authenticate has nothing to show: our Smithery listing was created,
-  then left empty with its scan recorded as `AUTH_TIMEOUT`, no tools and no
-  description — and their bot had asked for this exact path seconds before giving
-  up. Smithery documents the card as the escape hatch for precisely that case
-  ("automatic scanning can't complete (auth wall, ...)"), and it is the shape the
-  pre-connect discovery draft (SEP-2127) and a growing crowd of scanners probe.
+  that cannot authenticate has nothing to show: a listing gets created and left
+  empty, its scan recorded as a timeout, with no tools and no description — while
+  the scanner asks for this exact path before giving up. Directory documentation
+  names the card as the escape hatch for that case ("automatic scanning can't
+  complete (auth wall, ...)"), and it is the shape the pre-connect discovery draft
+  (SEP-2127) and a growing number of scanners probe.
   The endpoint keeps its 401 — that is what makes clients discover OAuth — while
   the card, generated from the live server, states the identity, the auth wall and
   the three tools with their real schemas. Six tests, including one that fails if

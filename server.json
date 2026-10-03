@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.pexafy/pexafy-mcp",
   "title": "Pexafy",
-  "description": "Semantic search over free-to-use stock photos from 9 libraries: by words, image, or similar.",
-  "version": "0.4.12",
+  "description": "Find free-to-use stock photos by words, by image or by similarity; every result names its licence.",
+  "version": "1.0.0",
   "websiteUrl": "https://pexafy.com/mcp/",
   "repository": {
     "url": "https://github.com/Pexafy/pexafy-mcp",

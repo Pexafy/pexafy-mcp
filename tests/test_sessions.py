@@ -1,25 +1,23 @@
 """The discovery-probe shortcut must be invisible to clients, and narrow.
 
-Production tells this story: clients speaking MCP 2026-07-28 open with a
-sessionless `server/discover` POST; the SDK builds a transport for it before
-reading the body, then rejects the request; nothing ever collects the transport.
-The shortcut in sessions.py answers first. These tests pin the two things that
-make it safe to ship:
+Clients speaking MCP 2026-07-28 open with a sessionless `server/discover` POST; the
+SDK builds a transport for it before reading the body, then rejects the request, and
+nothing ever collects the transport. The shortcut in sessions.py answers first. These
+tests pin the two things that make it safe to ship:
 
-  - the reply is the one the SDK already sends (same status, same bytes), so a
-    client falls back to the legacy handshake exactly as it does today;
-  - the same method name *inside an established session* — what Claude-User
-    actually sends, 9 times in a 21-hour window — never reaches the shortcut.
+  - the reply is the one the SDK already sends (same status, same bytes), so a client
+    falls back to the legacy handshake exactly as it does today;
+  - the same method name *inside an established session* — which clients do send —
+    never reaches the shortcut.
 
 The last one is the reason this file exists. Everything else is a detail.
 """
 from __future__ import annotations
 
-import importlib
-import os
-
 import pytest
 from starlette.testclient import TestClient
+
+from pexafy_mcp import server as server_module
 
 HTTP_ENV = {"PEXAFY_MCP_TRANSPORT": "http"}
 
@@ -43,16 +41,9 @@ INITIALIZE_BODY = {
 
 
 @pytest.fixture
-def http_app(monkeypatch):
+def http_app(reload_with_env):
     """The server as it runs remotely, minus OAuth (the shortcut sits behind it)."""
-    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
-        monkeypatch.delenv(key, raising=False)
-    for key, value in HTTP_ENV.items():
-        monkeypatch.setenv(key, value)
-
-    from pexafy_mcp import server
-
-    importlib.reload(server)
+    server = reload_with_env(server_module, HTTP_ENV)
     return server.build_server().http_app()
 
 
@@ -144,16 +135,10 @@ def test_install_is_idempotent(http_app):
     assert sessions.StreamableHTTPSessionManager.handle_request is patched
 
 
-def test_metrics_requires_the_token_when_one_is_configured(monkeypatch):
+def test_metrics_requires_the_token_when_one_is_configured(reload_with_env):
     """Prometheus reads this endpoint; nobody else should have to be trusted not to."""
-    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
-        monkeypatch.delenv(key, raising=False)
-    monkeypatch.setenv("PEXAFY_MCP_TRANSPORT", "http")
-    monkeypatch.setenv("PEXAFY_METRICS_TOKEN", "s3cret")
-
-    from pexafy_mcp import server
-
-    importlib.reload(server)
+    server = reload_with_env(server_module, {
+        "PEXAFY_MCP_TRANSPORT": "http", "PEXAFY_METRICS_TOKEN": "s3cret"})
     app = server.build_server().http_app()
 
     with TestClient(app) as client:
@@ -164,19 +149,13 @@ def test_metrics_requires_the_token_when_one_is_configured(monkeypatch):
         assert "pexafy_mcp_sessions_open" in allowed.text
 
 
-def test_metrics_token_can_come_from_a_file(monkeypatch, tmp_path):
-    """Prod points this at the same file Prometheus reads, so the secret lives once."""
+def test_metrics_token_can_come_from_a_file(reload_with_env, tmp_path):
+    """A deployment points this at the same file Prometheus reads, so the secret lives once."""
     token_file = tmp_path / "monitoring_token"
     token_file.write_text("from-a-file\n")
 
-    for key in [k for k in os.environ if k.startswith("PEXAFY_")]:
-        monkeypatch.delenv(key, raising=False)
-    monkeypatch.setenv("PEXAFY_MCP_TRANSPORT", "http")
-    monkeypatch.setenv("PEXAFY_METRICS_TOKEN_FILE", str(token_file))
-
-    from pexafy_mcp import server
-
-    importlib.reload(server)
+    server = reload_with_env(server_module, {
+        "PEXAFY_MCP_TRANSPORT": "http", "PEXAFY_METRICS_TOKEN_FILE": str(token_file)})
     app = server.build_server().http_app()
 
     with TestClient(app) as client:
