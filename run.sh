@@ -18,7 +18,9 @@ _need_venv() { [ -x "$PY" ] || { echo "Run './run.sh setup' first."; exit 1; }; 
 cmd_setup() {            # create venv + install (editable, with dev tools) + seed .env
   [ -d "$VENV" ] || python3 -m venv "$VENV"
   "$PY" -m pip install -q --upgrade pip
-  "$PY" -m pip install -q -e ".[dev]"
+  # The versions production runs (constraints.txt, as the Dockerfile): the tests check
+  # the server that ships, and a dependency release cannot turn them red overnight.
+  "$PY" -m pip install -q -e ".[dev]" -c constraints.txt
   [ -f .env ] || { cp .env.example .env; echo "Created .env from .env.example — fill it in."; }
   echo "Setup done."
 }
