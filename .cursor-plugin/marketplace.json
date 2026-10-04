@@ -1,0 +1,17 @@
+{
+  "name": "pexafy",
+  "owner": {
+    "name": "Pexafy",
+    "email": "support@pexafy.com"
+  },
+  "metadata": {
+    "description": "Pexafy's plugin for Cursor: free stock photo search over MCP"
+  },
+  "plugins": [
+    {
+      "name": "pexafy",
+      "source": "cursor",
+      "description": "Find free stock photos by describing the scene or giving a reference image, each with its credit line."
+    }
+  ]
+}
