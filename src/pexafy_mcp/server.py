@@ -589,6 +589,11 @@ client = httpx.AsyncClient(
 # result contains is said on the tools, not here — OpenAI asks that this field not
 # repeat the tool descriptions, and keep what matters most in its first 512 characters.
 #
+# So the field opens on the trigger, and the sentence on what Pexafy is follows the
+# bullets. Placed first, that sentence spent 167 of the 512 characters and left room
+# for one whole bullet; after them, three fit whole, with the opening of the fourth
+# ("Free, stock, royalty-free…"), and a host that loads the whole field still reads it.
+#
 # Under 2,048 characters: Claude Code truncates this field (and every tool description)
 # there, and the tail is the tool routing. A test pins the limit.
 #
@@ -612,8 +617,6 @@ client = httpx.AsyncClient(
 # about this server: an unscoped "do not add photographs" reads as a rule over every
 # tool (Anthropic 2.E).
 _INSTRUCTIONS_HEAD = (
-    "Pexafy searches its own index of millions of free-to-use photographs from stock libraries such as Unsplash, Pexels and Pixabay, each with its licence and credit line.\n"
-    "\n"
     "Use this server when the user asks for real photographs, or states a need that photographs fill, in any language, for example:\n"
     "\n"
     "* Finding, showing or providing photos or pictures.\n"
@@ -622,6 +625,8 @@ _INSTRUCTIONS_HEAD = (
     "* Free, stock, royalty-free, commercially usable or documentary photographs.\n"
     "* A real photograph, when the user asks for one.\n"
     "* Free alternatives to a picture, or photos that look like it — one the user links to or that the host passes as a file, or a Pexafy photo already found.\n"
+    "\n"
+    "Pexafy searches its own index of millions of free-to-use photographs from stock libraries such as Unsplash, Pexels and Pixabay, each with its licence and credit line.\n"
     "\n"
     "### When NOT to use Pexafy\n"
     "\n"
