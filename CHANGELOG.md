@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- **The server instructions open on when to use the server.** OpenAI asks for the most
+  important details in the first 512 characters of this field. The sentence on what
+  Pexafy is used to come first and took 167 of them, leaving room for one whole bullet
+  of triggers. It now follows the bullets: three fit whole in the 512, with the start of
+  the fourth. No word changed, and the length is the same.
+
 ## [1.0.0] — 2026-10-03
 
 In short: five tools where there were three, a search surface of one sentence and one

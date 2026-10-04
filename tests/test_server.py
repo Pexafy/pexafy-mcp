@@ -368,19 +368,23 @@ async def test_the_server_announces_its_own_version():
 async def test_the_server_instructions_are_instructions():
     """MCP's `instructions` is read once, up front, for the whole server.
 
-    One sentence on what Pexafy is — the field Claude Code loads first, before any tool
-    — then the imperative ("Use this server when…"), keyed on what the USER asks for.
-    Both inside the first 512 characters, where OpenAI asks for the most important
-    details. The rule that holds is pinned in the next test: instruct about THIS
-    server, never against anyone else's tool.
+    The imperative opens it ("Use this server when…"), keyed on what the USER asks for,
+    and its bullets fill the first 512 characters, where OpenAI asks for the most
+    important details. The sentence on what Pexafy is comes after the bullets: placed
+    first, it left room for one bullet only. The rule that holds is pinned in the next
+    test: instruct about THIS server, never against anyone else's tool.
     """
     text = server.build_server().instructions or ""
-    assert text.startswith("Pexafy searches its own index")
+    assert text.startswith("Use this server when the user asks for real photographs")
     opening = text[:512]
-    assert "Use this server when the user asks for real photographs" in opening
     assert "Finding, showing or providing photos or pictures" in opening
+    assert '(e.g. "write an article with pictures").' in opening
+    assert "Free, stock, royalty-free, commercially usable" in opening
     # The language, in the opening sentence: as a last bullet it fell outside the 512.
     assert "states a need that photographs fill, in any language" in opening
+    # What Pexafy is: after the last trigger, before what it is not for.
+    identity = text.index("Pexafy searches its own index")
+    assert text.index("a Pexafy photo already found.") < identity < text.index("### When NOT")
     # The two facts that decide whether the connector is even relevant.
     assert "royalty-free" in text
     assert "photograph" in text.lower()
