@@ -2356,7 +2356,27 @@ const trail = [];        // pages (see newPage); trail[0] is the anchor, ref = n
 let step = 0;            // which one is on screen
 let refining = false;    // a call is out, or a card is on its way off the deck
 
+/* A host can fail before the call leaves the page. ChatGPT runs a call from the frame
+   with a piece of its own page that it loads on first use (`callMcpWithAuth`, published
+   2026-10-04). Where that load fails on the reader's side (an extension, a stale cache;
+   a private window works), every call from the frame fails the same way: "MCP error
+   -32000: Failed to fetch dynamically imported module: https://chatgpt.com/cdn/assets/…"
+   (2026-10-05). The host still runs the model's own calls, on its servers, so from the
+   first such failure this frame asks in the conversation instead (askSimilar,
+   CONNECT_ASK) and hides what only a call from the frame can do (the shape filter).
+   Each browser words the failure its own way. */
+const HOST_LOAD_FAILED =
+  /dynamically imported module|importing a module script failed|ChunkLoadError|loading chunk \\S+ failed/i;
+let proxyBroken = false;
+
+function hostLoadFailed(e) {
+  const failed = HOST_LOAD_FAILED.test(String((e && e.message) || e || ""));
+  if (failed) proxyBroken = true;
+  return failed;
+}
+
 function canProxyTools() {
+  if (proxyBroken) return false;
   return hostCan("serverTools")
     || !!(window.openai && typeof window.openai.callTool === "function");
 }
@@ -2593,7 +2613,14 @@ async function refineFrom(f) {
     beatTheAnchor();
     return true;
   } catch (e) {
-    toast((e && e.message) ? e.message : tx("Could not fetch similar photos"));
+    /* The host's own words ("MCP error -32000: …") were the toast. They go to the
+       console, and the request goes to the conversation, where the host runs the
+       call itself: the reader still gets the photos. */
+    console.warn("Pexafy: the host did not run the search from the grid ("
+      + String((e && e.message) || e) + "); asking in the conversation");
+    hostLoadFailed(e);
+    if (speakSimilar(f, wordsOf(trail[step]))) return true;
+    toast(tx("Could not fetch similar photos"));
     return false;
   } finally {
     refining = false;
@@ -2792,7 +2819,12 @@ async function applyShapes(list) {
     // The grid changed without a page turn: it arrives the same way.
     enterPage(1);
   } catch (e) {
-    toast((e && e.message) ? e.message : tx("Could not filter by shape"));
+    // Not the host's own words (see refineFrom). paintShape() below hides the filter
+    // once the host is known to run no call from the frame (hostLoadFailed).
+    console.warn("Pexafy: the host did not run the shape filter ("
+      + String((e && e.message) || e) + ")");
+    hostLoadFailed(e);
+    toast(tx("Could not filter by shape"));
     ORIGIN = here.origin;
     pending = null;
     paintShape();
@@ -3492,14 +3524,20 @@ function dragify(el) {
 function askSimilar() {
   const f = DECK[idx];
   if (!f) return false;
-  const words = wordsOf(trail[step]);
+  if (speakSimilar(f, wordsOf(trail[step]))) return true;
+  if (f.pexafyUrl) { openLink(f.pexafyUrl + "#similar-photos", "similar"); return true; }
+  toast(tx("This host cannot ask for similar photos"));
+  return false;
+}
+
+/* The turn itself. Also where the host failed to run the frame's own call
+   (refineFrom): the same request then reaches the host by the conversation. */
+function speakSimilar(f, words) {
   const text = tx("Find me more photos like this one")
     + (f.description ? ' (' + f.description + ')' : '')
     + ' — photo_id "' + f.id + '"'
     + (words ? tx(', from my search "{words}"', { words: words }) : '') + '.';
   if (speak(text)) { toast(tx("Asked for more like this one")); followTheAnswer(); return true; }
-  if (f.pexafyUrl) { openLink(f.pexafyUrl + "#similar-photos", "similar"); return true; }
-  toast(tx("This host cannot ask for similar photos"));
   return false;
 }
 
@@ -3806,9 +3844,14 @@ async function connectAccount(url) {
     }
   } catch (e) {
     // The refusal is the challenge, and the host has acted on it by now: falling
-    // through would ask twice.
-    watchForConnection();
-    return;
+    // through would ask twice. Unless the call never left the page (hostLoadFailed):
+    // then nothing opened, and the model is asked.
+    if (!hostLoadFailed(e)) {
+      watchForConnection();
+      return;
+    }
+    console.warn("Pexafy: the host did not run the connect call from the grid ("
+      + String((e && e.message) || e) + "); asking in the conversation");
   }
   // speak() knows both ways a host takes a message, and which one ChatGPT prefers.
   if (speak(tx(CONNECT_ASK))) return;
@@ -3838,7 +3881,8 @@ function watchForConnection() {
       connected = sc.connected === true;
     } catch (e) {
       // The probe never raises: an error means the host refused the call, and asking
-      // again would not change that.
+      // again would not change that. Or that it cannot run one (hostLoadFailed).
+      hostLoadFailed(e);
       return;
     }
     if (connected) { markConnected(); return; }
@@ -3887,6 +3931,7 @@ function watchForAllowance() {
       const b = sc.budget;
       back = ("budget" in sc) && (!b || b.state !== "exhausted");
     } catch (e) {
+      hostLoadFailed(e);
       return;
     }
     if (back) { markAllowanceBack(); return; }

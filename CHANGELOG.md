@@ -13,6 +13,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   of triggers. It now follows the bullets: three fit whole in the 512, with the start of
   the fourth. No word changed, and the length is the same.
 
+### Fixed
+- **≈ still finds similar photos when the host cannot run the grid's own call.** ChatGPT
+  runs a call from the grid with code that it loads on first use. In some browsers that
+  load fails every time (an extension, a stale cache; a private window works), and the
+  grid showed the host's error as its toast: "MCP error -32000: Failed to fetch
+  dynamically imported module: https://chatgpt.com/cdn/assets/…". The request now goes
+  to the conversation instead, with the photo's `photo_id` and the words of the search,
+  and the host runs it on its servers. After that failure the grid makes no call of its
+  own: the next ≈ goes to the conversation at once, the shape filter is hidden, and
+  "Sign in" asks the assistant. No toast shows the host's error text; it goes to the
+  console.
+
 ## [1.0.0] — 2026-10-03
 
 In short: five tools where there were three, a search surface of one sentence and one
