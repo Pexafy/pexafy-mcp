@@ -1925,12 +1925,6 @@ def build_server() -> FastMCP:
     # filters: the names are translated and the filters dropped, so the call answers
     # instead of failing on "unexpected keyword argument". See compat.py.
     mcp.add_middleware(compat.DropRetiredParams())
-    # …and the one tool 1.0.0 removed stays in the list an OpenAI host reads, as 0.4.12
-    # defined it: dropped from `tools/list`, it would leave the published app at the next
-    # scan, before the by-image search's `photo_id` is approved there. Its calls are the
-    # translation above. PEXAFY_SIMILAR_ALIAS=0 takes it off. See compat.py.
-    if compat.SIMILAR_ALIAS:
-        mcp.add_middleware(compat.ListSimilarAlias(compat.similar_alias(grid=grid)))
     # Arguments the API would answer badly are refused here, with a message the caller
     # can act on: a `photo_id` that is not one (a rank), a blank or overlong sentence,
     # an unknown shape. After compat, so they see the current names. See guards.py.

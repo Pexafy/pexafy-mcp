@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from pexafy_mcp import compat, previews, selection
+from pexafy_mcp import previews, selection
 from pexafy_mcp.env import flag
 
 NAME = "PEXAFY_TEST_SWITCH"
@@ -43,8 +43,3 @@ def test_previews_read_the_same_words(reload_with_env, raw, expected):
 @pytest.mark.parametrize(("raw", "expected"), [("", True), ("yes", True), ("off", False)])
 def test_the_selection_tool_reads_the_same_words(reload_with_env, raw, expected):
     assert reload_with_env(selection, {"PEXAFY_SELECTION_TOOL": raw}).TOOL_ENABLED is expected
-
-
-@pytest.mark.parametrize(("raw", "expected"), [("", True), ("yes", True), ("off", False), ("0", False)])
-def test_the_similar_alias_reads_the_same_words(reload_with_env, raw, expected):
-    assert reload_with_env(compat, {"PEXAFY_SIMILAR_ALIAS": raw}).SIMILAR_ALIAS is expected

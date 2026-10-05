@@ -139,7 +139,7 @@ def window_closed(monkeypatch):
 
 
 # The three ways the published app asks for photographs: a text search, a search from a
-# catalogue photo, and the 0.4.12 similar tool, still listed for it.
+# catalogue photo, and the 0.4.12 similar tool, whose name is still answered.
 CALLS = [
     (tooling.PUBLIC_TOOL_NAMES["search_photos"], {"q": "a red bicycle"}),
     (tooling.PUBLIC_TOOL_NAMES["search_photos_by_image"], {"photo_id": REFERENCE}),

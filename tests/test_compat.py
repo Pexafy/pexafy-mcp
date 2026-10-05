@@ -9,8 +9,6 @@ from __future__ import annotations
 
 import base64
 import copy
-import hashlib
-import json
 
 import httpx
 import jsonschema
@@ -19,7 +17,7 @@ from fastmcp import Client
 from fastmcp.exceptions import ToolError
 from mcp.types import Implementation
 
-from pexafy_mcp import compat, linking, previews, server, tooling, widget
+from pexafy_mcp import compat, previews, server, tooling
 
 PHOTO_ID = "019e1ecb-0039-7da6-b1ca-987ee4d337c0"
 PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
@@ -440,22 +438,14 @@ async def test_a_call_with_invented_parameters_is_answered_end_to_end(fake_api, 
     assert {key: params.get_list(key) for key in params if key != "per_page"} == wire
 
 
-# ── `get_similar_photos`, still listed for ChatGPT ────────────────────────────
-# OpenAI removes from a published app a tool that `tools/list` stops naming, at its next
-# scan, and keeps the previous definition of a changed one until the new one passes its
-# checks. 1.0.0 has no similar tool, and the by-image search's `photo_id` reaches the
-# published app only once approved: until then the tool stays in the list an OpenAI host
-# reads, as 0.4.12 defined it, and a call to it is the by-image search.
+# ── `get_similar_photos`, listed to no host ───────────────────────────────────
+# 1.0.0 kept it in the list an OpenAI host reads, as 0.4.12 defined it, until the
+# published app's 1.0.0 tools were live (`photo_id` on the by-image search among them).
+# They are, and the alias went. A call under the old name is still the by-image search.
 
-# The definition 0.4.12 served in production — grid on — as its `tools/list` carried it,
-# in canonical JSON (sorted keys, no spaces). Computed from the release itself
-# (`git archive bc7b4c8 src`, the thumbnail proxy configured), not from the file it pins:
-# an edit of that file is a change OpenAI's scan would see.
-SIMILAR_0_4_12_SHA256 = "83642e9dc6562ac9898ff78a5e9fad67560e6cc2dea31e9d9b28f9e2c6fbf160"
-
-# Every host that is not OpenAI, and a client that names itself as nothing known.
-OTHER_HOSTS = ("Anthropic/ClaudeAI", "claude-ai", "Anthropic", "claude-code",
-               "Visual Studio Code", "cursor-vscode", "goose", "mcp-scan", None)
+# Every host, OpenAI's included, and a client that names itself as nothing known.
+HOSTS = ("openai-mcp", "ChatGPT", "Anthropic/ClaudeAI", "claude-ai", "Anthropic",
+         "claude-code", "Visual Studio Code", "cursor-vscode", "goose", "mcp-scan", None)
 
 # Two photographs as the API writes them, every field 0.4.12 declared in its output.
 API_PHOTOS = [
@@ -510,78 +500,19 @@ def grid_on(reload_with_env):
     })
 
 
-@pytest.fixture
-def linking_off(monkeypatch):
-    """Production's first phase, PEXAFY_ACCOUNT_LINKING=0: no `securitySchemes`, which
-    0.4.12 never declared."""
-    monkeypatch.setattr(linking, "ENABLED", False)
-
-
 async def _listed_to(client_name: str | None) -> list:
     info = Implementation(name=client_name, version="1") if client_name else None
     async with Client(server.build_server(), client_info=info) as client:
         return await client.list_tools()
 
 
-def _wire(tool) -> dict:
-    return tool.model_dump(mode="json", by_alias=True, exclude_none=True)
-
-
-def test_the_alias_is_the_definition_0_4_12_published():
-    published = compat.similar_definition()
-    canonical = json.dumps(published, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    assert hashlib.sha256(canonical.encode()).hexdigest() == SIMILAR_0_4_12_SHA256
-    assert published["name"] == compat.SIMILAR_TOOL == "get_similar_photos"
-    assert published["title"] == published["annotations"]["title"] == "Find similar photos"
-    schema = published["inputSchema"]
-    assert set(schema["properties"]) == PUBLISHED_0_4_12["get_similar_photos"]
-    assert schema["required"] == ["photo_id"]
-    assert schema["additionalProperties"] is False
-    # The grid it names is the one this server still serves under that URI.
-    assert published["_meta"]["ui"] == {"resourceUri": widget.GRID_URI}
-    assert compat.RENAMED_TOOLS[compat.SIMILAR_TOOL] == tooling.PUBLIC_TOOL_NAMES["search_photos_by_image"]
-
-
-@pytest.mark.parametrize("client_name", ["openai-mcp", "ChatGPT"])
-async def test_an_openai_host_is_listed_the_definition_0_4_12_published(
-        grid_on, linking_off, client_name):
-    """Byte for byte, key order included: the scan compares what it reads with what it
-    holds, and finds nothing changed. Listed after the 1.0.0 tools, which keep theirs."""
-    listed = await _listed_to(client_name)
-    names = [t.name for t in listed]
-    assert names[-1] == compat.SIMILAR_TOOL, names
-    assert names[:-1] == [n for n in server.TOOL_ORDER if n in names], names
-    wire = _wire(listed[-1])
-    assert wire == compat.similar_definition()
-    assert json.dumps(wire) == json.dumps(compat.similar_definition())
-
-
-async def test_with_account_linking_on_it_declares_what_every_tool_declares(grid_on, monkeypatch):
-    """`securitySchemes` is the server's answer about authentication, the same on every
-    tool it lists; the rest of the definition is still 0.4.12's."""
-    monkeypatch.setattr(linking, "ENABLED", True)
-    tools = {t.name: _wire(t) for t in await _listed_to("openai-mcp")}
-    alias = tools.pop(compat.SIMILAR_TOOL)
-    for name, tool in tools.items():
-        assert alias["securitySchemes"] == tool["securitySchemes"], name
-    del alias["securitySchemes"], alias["_meta"]["securitySchemes"]
-    assert alias == compat.similar_definition()
-
-
-async def test_without_the_grid_it_points_at_no_grid(linking_off):
-    """No thumbnail proxy, no grid resource: `ui` is left out, as 0.4.12 left it out."""
-    published = compat.similar_definition()
-    del published["_meta"]["ui"]
-    tools = {t.name: _wire(t) for t in await _listed_to("openai-mcp")}
-    assert tools[compat.SIMILAR_TOOL] == published
-
-
-async def test_no_other_host_is_listed_it(grid_on):
-    """Not Claude, not an editor, not a client that cannot be placed — and neither of the
-    probes, which count and show the list those hosts read."""
+async def test_no_host_is_listed_it(grid_on):
+    """Not ChatGPT, not Claude, not an editor, not a client that cannot be placed — and
+    neither of the probes, which count and show the list those hosts read."""
     expected = [t.name for t in await _listed_to(None)]
     assert compat.SIMILAR_TOOL not in expected
-    for name in OTHER_HOSTS:
+    assert expected == [n for n in server.TOOL_ORDER if n in expected], expected
+    for name in HOSTS:
         assert [t.name for t in await _listed_to(name)] == expected, name
     from starlette.testclient import TestClient
 
@@ -592,25 +523,25 @@ async def test_no_other_host_is_listed_it(grid_on):
 
 
 async def test_a_call_under_the_old_name_is_a_search_by_image(grid_on, fake_api, caplog):
-    """`get_similar_photos{photo_id, cursor}`, as the published app sends it: the
-    by-image search answers, with the same photographs and the same grid as a call made
-    under its own name, and an answer valid against the output 0.4.12 declared — the
-    client checks it against the listed schema, and so does this test."""
+    """`get_similar_photos{photo_id, cursor}`, as the 0.4.12 app sent it: the by-image
+    search answers, with the same photographs and the same grid as a call made under its
+    own name, and an answer valid against the by-image search's own output schema."""
     fake_api.respond = _similar_answer
     reference = API_PHOTOS[0]["photo_id"]
+    by_image = tooling.PUBLIC_TOOL_NAMES["search_photos_by_image"]
+    assert compat.RENAMED_TOOLS[compat.SIMILAR_TOOL] == by_image
     async with Client(server.build_server(),
                       client_info=Implementation(name="openai-mcp", version="1.0.0")) as client:
         listed = {t.name: t for t in await client.list_tools()}
         with caplog.at_level("INFO", logger="pexafy.mcp"):
             similar = await client.call_tool(compat.SIMILAR_TOOL,
                                              {"photo_id": reference, "cursor": "abc"})
-        direct = await client.call_tool(tooling.PUBLIC_TOOL_NAMES["search_photos_by_image"],
-                                        {"photo_id": reference})
+        direct = await client.call_tool(by_image, {"photo_id": reference})
 
     answer = similar.structured_content
     assert answer["success"] is True
     assert [p["photo_id"] for p in answer["data"]] == [p["photo_id"] for p in API_PHOTOS]
-    jsonschema.validate(answer, listed[compat.SIMILAR_TOOL].outputSchema)
+    jsonschema.validate(answer, listed[by_image].outputSchema)
     assert answer == direct.structured_content
     assert previews.PREVIEW_META_KEY in similar.meta
     assert set(similar.meta) == set(direct.meta)
@@ -624,28 +555,3 @@ async def test_a_call_under_the_old_name_is_a_search_by_image(grid_on, fake_api,
         assert request.content == b""
     assert "Renamed tool call: get_similar_photos -> search_photos_by_image" in caplog.text
     assert "Retired parameter(s) ignored on search_photos_by_image: cursor" in caplog.text
-
-
-async def test_the_answer_without_the_grid_is_valid_against_the_published_output(fake_api):
-    """With no grid nothing moves to `_meta` and the answer keeps every link — still an
-    answer the output 0.4.12 declared accepts."""
-    fake_api.respond = _similar_answer
-    async with Client(server.build_server(),
-                      client_info=Implementation(name="openai-mcp", version="1.0.0")) as client:
-        listed = {t.name: t for t in await client.list_tools()}
-        result = await client.call_tool(compat.SIMILAR_TOOL, {"photo_id": API_PHOTOS[0]["photo_id"]})
-    assert len(result.structured_content["data"]) == len(API_PHOTOS)
-    jsonschema.validate(result.structured_content, listed[compat.SIMILAR_TOOL].outputSchema)
-
-
-async def test_the_switch_takes_it_off_the_list(reload_with_env, fake_api):
-    """PEXAFY_SIMILAR_ALIAS=0 once the app's new tools are approved: off the list for
-    every host. A call under the old name is still answered."""
-    assert reload_with_env(compat, {"PEXAFY_SIMILAR_ALIAS": "0"}).SIMILAR_ALIAS is False
-    async with Client(server.build_server(),
-                      client_info=Implementation(name="openai-mcp", version="1")) as client:
-        assert compat.SIMILAR_TOOL not in {t.name for t in await client.list_tools()}
-        result = await client.call_tool(compat.SIMILAR_TOOL, {"photo_id": PHOTO_ID})
-    assert result.structured_content["success"] is True
-    [request] = fake_api.requests
-    assert request.url.params["photo_id"] == PHOTO_ID

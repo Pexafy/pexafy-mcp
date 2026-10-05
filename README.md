@@ -268,10 +268,9 @@ log lines says when the translation can go ([`compat.py`](src/pexafy_mcp/compat.
 | `text_alpha` (by-image search) | ignored — the API's own balance applies |
 
 A published ChatGPT app is different: OpenAI re-scans its `tools/list` and removes a tool
-the list no longer names. So `get_similar_photos` stays in the tool list an OpenAI host
-reads, with the definition 0.4.12 published, until the app's 1.0.0 tools are approved; no
-other host sees it. `PEXAFY_SIMILAR_ALIAS=0` takes it off the list, and its calls are
-answered either way.
+the list no longer names. `get_similar_photos` stayed in the list OpenAI hosts read until
+the app's 1.0.0 tools were live; no host sees it now, and a call under its name is still
+answered.
 
 ChatGPT also keeps the grid it was served, under the same URI, for up to an hour after a
 deploy, and draws the new answers with it. The 0.4.12 grid reads only the answer's
@@ -304,8 +303,7 @@ linking is on (`PEXAFY_ACCOUNT_LINKING`, on by default; the compose example belo
 it off): three tools, or two. `get_photo_file_by_photo_id`, `get_grid_selected_photos`
 and the grid need a thumbnail proxy whose signing secret you hold
 (`PEXAFY_THUMB_BASE_URL`, `PEXAFY_THUMB_HMAC_SECRET`); with one, it lists four tools or
-five. An OpenAI host also sees `get_similar_photos` (see
-[Upgrading from 0.4.x](#upgrading-from-04x)).
+five.
 
 Requires Python 3.12+.
 
@@ -386,7 +384,6 @@ the ones that change what the server is:
 | `PEXAFY_SIGN_IN_BY_401` | `1` | Outside ChatGPT, asking to connect is answered 401 so the client runs its own OAuth; the editor that signed in is then asked to at every start from that machine (OAuth on only) |
 | `PEXAFY_COACH_ONCE` | `1` | The grid's first-steps coach plays once per person, not in every grid |
 | `PEXAFY_REDIS_URL` | *(empty)* | Where the coach and editor sign-ins are remembered; empty = this process's memory, forgotten on a restart |
-| `PEXAFY_SIMILAR_ALIAS` | `1` | Keep `get_similar_photos` (0.4.x) in the tool list of an OpenAI host only, with its 0.4.12 definition, until the app's 1.0.0 tools are approved |
 | `PEXAFY_LEGACY_GRID_UNTIL` | *(empty)* | Until this UTC instant (epoch seconds or ISO 8601), an OpenAI host's answers keep what the 0.4.12 grid, still in ChatGPT's cache, reads; set it to the deploy time + 2 hours |
 
 An empty value is not always the same as an unset one — `PEXAFY_WEB_URL=` blanks the
@@ -401,7 +398,7 @@ keep a default.
 src/pexafy_mcp/
 ├── server.py        # build_server(): the API client and its hooks, the hand-written tools, the HTTP routes
 ├── tooling.py       # tunes the OpenAPI-generated search for an LLM; tool-name registry; output schema
-├── compat.py        # accepts the tool names and parameters 0.4.x published; lists get_similar_photos for ChatGPT; the 0.4.12 grid's window
+├── compat.py        # accepts the tool names and parameters 0.4.x published; the 0.4.12 grid's window
 ├── guards.py        # refuses a malformed photo_id, sentence or shape with a message saying what to send
 ├── previews.py      # signs the grid's thumbnail URLs and moves them to the result's _meta
 ├── origin.py        # the replayable form of a search, for the grid's shape filter
@@ -424,8 +421,7 @@ src/pexafy_mcp/
 ├── __main__.py      # python -m pexafy_mcp
 └── assets/          # vendored, shipped with the package:
     ├── openapi.json                    # snapshot of the Pexafy API spec the text search is generated from
-    ├── ext_apps_bundle.js              # @modelcontextprotocol/ext-apps SDK, inlined into the grid
-    └── get_similar_photos-0.4.12.json  # the similar tool as 0.4.12 published it, still listed for ChatGPT
+    └── ext_apps_bundle.js              # @modelcontextprotocol/ext-apps SDK, inlined into the grid
 ```
 
 - **One generated tool, four written by hand.** `search_photos` is generated from the

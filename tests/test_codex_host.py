@@ -8,8 +8,8 @@ for a host that shows the grid: the text it read named the photographs without a
 (previews.grid_summary), its previews came without an address, and its user had no way
 left to see or use them. Told apart now by its User-Agent, or by a `clientInfo` naming
 Codex (hosts.is_codex), it reads the whole answer, links included, as in 0.4.12 — unless
-it declares MCP Apps itself. It stays an OpenAI host: the `get_similar_photos` alias and
-the 0.4.12 grid's window are still its own.
+it declares MCP Apps itself. It stays an OpenAI host: the 0.4.12 grid's window is still
+its own.
 
 The answers are read over the HTTP transport, as Codex reaches the server: the
 User-Agent is a header of the request, which an in-process client has none of. Offline:
@@ -225,7 +225,7 @@ def test_chatgpt_is_unchanged(grid_on):
     names, result = _as(CHATGPT, "openai-mcp")
     _reads_the_grid_summary(result)
     assert result["_meta"]["pexafy/host"] == {"assistant": "ChatGPT"}
-    assert names[-1] == compat.SIMILAR_TOOL
+    assert compat.SIMILAR_TOOL not in names
 
 
 def test_codex_cli_still_reads_the_whole_answer(grid_on):
@@ -236,10 +236,10 @@ def test_codex_cli_still_reads_the_whole_answer(grid_on):
     assert result["_meta"]["pexafy/host"] == {"assistant": "Codex"}
 
 
-def test_the_alias_is_still_listed_for_codex(grid_on):
+def test_codex_is_listed_the_current_tools_only(grid_on):
     names, _ = _as(CODEX, "openai-mcp")
-    assert names[-1] == compat.SIMILAR_TOOL
-    assert names[:-1] == [n for n in server.TOOL_ORDER if n in names], names
+    assert compat.SIMILAR_TOOL not in names
+    assert names == [n for n in server.TOOL_ORDER if n in names], names
 
 
 def test_the_0_4_12_window_still_applies_to_codex(grid_on, monkeypatch):

@@ -37,11 +37,8 @@ def test_the_translation_is_silent():
 
     Listing both would double the surface the model rereads on every turn and blur the
     routing, for nothing: a caller on the old snapshot does not need to READ the old
-    name, it needs it to ANSWER.
-
-    One exception, for an OpenAI host alone: `get_similar_photos` stays listed there as
-    0.4.12 defined it, because the published app loses at its next scan a tool the list
-    stops naming (compat.ListSimilarAlias, test_compat). This listing is no OpenAI one.
+    name, it needs it to ANSWER. `get_similar_photos` included: 1.0.0 listed it to OpenAI
+    hosts until the published app's new tools were live, and no host sees it now.
     """
     from pexafy_mcp import server
     names = {t.name for t in asyncio.run(server.build_server().list_tools())}

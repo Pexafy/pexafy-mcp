@@ -17,10 +17,10 @@ translates the call before it runs:
 
 What the translation does not cover: a tool the host no longer lists. A published ChatGPT
 app loses a tool at the next scan of `tools/list`, whatever this module would answer to;
-the translation only serves a caller that still SENDS an old name or old parameters. So
-the one tool 1.0.0 removed, `get_similar_photos`, is still LISTED for an OpenAI host,
-under the definition 0.4.12 published (ListSimilarAlias, PEXAFY_SIMILAR_ALIAS), and its
-calls are translated like any other old name.
+the translation only serves a caller that still SENDS an old name or old parameters.
+`get_similar_photos`, the one tool 1.0.0 removed, stayed listed to OpenAI hosts until the
+published app's 1.0.0 tools were live, `photo_id` on the by-image search among them. It
+is listed nowhere now; a call under its name is translated like any other old name.
 
 Nor does it cover the grid ChatGPT keeps in its cache: for a while after the deploy, the
 0.4.12 grid draws 1.0.0's answers. Until PEXAFY_LEGACY_GRID_UNTIL, an OpenAI host's
@@ -33,20 +33,15 @@ from __future__ import annotations
 
 import contextvars
 import copy
-import json
 import logging
 import math
 import os
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 from fastmcp.server.middleware import Middleware, MiddlewareContext
-from fastmcp.tools.tool import Tool
-from mcp.types import ToolAnnotations
 
 from . import hosts, origin, previews, tooling
-from .env import flag
 
 logger = logging.getLogger("pexafy.mcp")
 
@@ -181,91 +176,6 @@ class DropRetiredParams(Middleware):
                     ", ".join(dropped),
                 )
         return await call_next(context)
-
-
-# ── `get_similar_photos`, still listed for ChatGPT ────────────────────────────
-# OpenAI re-scans a published app's `tools/list` and compares it with the definitions
-# it holds. A tool the list no longer names is removed from the app at that scan,
-# without waiting for any check; a tool whose definition changed keeps its previous one
-# until the new one passes the checks (developers.openai.com, "Continuous review and
-# tool updates"). Dropped from the list, `get_similar_photos` would leave the published
-# app at the first scan after the deploy — while `search_photos_by_image` keeps its
-# 0.4.12 definition, which has no `photo_id`, until 1.0.0's is approved. In between,
-# "more like this one" would have no way through at all.
-#
-# So the tool is still listed to an OpenAI host, exactly as 0.4.12 defined it: the scan
-# finds the definition it holds, and nothing changes for that tool. A call is answered by
-# DropRetiredParams above, routed to the by-image search with the same `photo_id`, and it
-# comes back as one: the same photographs, the same grid. Rolling back to 0.4.12 then
-# changes nothing for it either.
-#
-# Only to an OpenAI host (hosts.is_openai: its `clientInfo`, or `openai/` keys in the
-# request's `_meta`). No other host holds a published snapshot — each reads `tools/list`
-# itself and finds `photo_id` on the by-image search — and a second way to ask for the
-# same thing is one more tool for its model to weigh on every turn. The probes — /health
-# and the server card — are not hosts: they count and show the list every other host
-# reads. OpenAI's scan gets the alias only if it names itself as OpenAI's, as ChatGPT
-# does; the log line below says which listings carried it.
-#
-# On by default, read at start like every switch: PEXAFY_SIMILAR_ALIAS=0 takes it off the
-# list once the app's new tools are approved. Calls under the old name are answered
-# either way.
-SIMILAR_ALIAS = flag("PEXAFY_SIMILAR_ALIAS", True)
-
-# The definition, as 0.4.12 served it in production — grid on — in `tools/list`: name,
-# title, description, input and output schemas, annotations and `_meta`, verbatim. A
-# file rather than code: it is a record of what was published, not something to edit.
-SIMILAR_DEFINITION = Path(__file__).resolve().parent / "assets" / "get_similar_photos-0.4.12.json"
-
-
-def similar_definition() -> dict:
-    """The tool as 0.4.12 published it, read off its `tools/list`."""
-    return json.loads(SIMILAR_DEFINITION.read_text(encoding="utf-8"))
-
-
-def similar_alias(*, grid: bool) -> Tool:
-    """The listed half of the alias: a tool that serializes to the published definition.
-
-    It is never run. A call under its name is renamed by DropRetiredParams before the
-    server looks a tool up, and the by-image search answers it.
-
-    `_meta.ui` points at the grid only where there is one, as 0.4.12 did: with no
-    thumbnail proxy, no grid resource is registered for it to point at. `_meta.fastmcp`
-    is FastMCP's own, written from the tool's tags.
-    """
-    published = similar_definition()
-    meta = dict(published.get("_meta") or {})
-    tags = set((meta.pop("fastmcp", None) or {}).get("tags") or ())
-    if not grid:
-        meta.pop("ui", None)
-    return Tool(
-        name=published["name"],
-        title=published.get("title"),
-        description=published.get("description"),
-        parameters=published["inputSchema"],
-        output_schema=published.get("outputSchema"),
-        annotations=ToolAnnotations(**published["annotations"]),
-        meta=meta or None,
-        tags=tags,
-    )
-
-
-class ListSimilarAlias(Middleware):
-    """Add `get_similar_photos` to the tool list an OpenAI host reads. Every other host,
-    and every probe, gets the list unchanged."""
-
-    def __init__(self, tool: Tool):
-        self.tool = tool
-
-    async def on_list_tools(self, context: MiddlewareContext, call_next):
-        tools = await call_next(context)
-        if not hosts.is_openai(context):
-            return tools
-        if any(getattr(tool, "name", None) == self.tool.name for tool in tools):
-            return tools
-        # Logged: whether the published app's own listings still carry it.
-        logger.info("Listed %s for an OpenAI host, as 0.4.12 defined it", self.tool.name)
-        return [*tools, self.tool]
 
 
 # ── The 0.4.12 grid, still in ChatGPT's cache ─────────────────────────────────

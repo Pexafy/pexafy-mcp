@@ -13,6 +13,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   of triggers. It now follows the bullets: three fit whole in the 512, with the start of
   the fourth. No word changed, and the length is the same.
 
+### Removed
+- **`get_similar_photos` is listed to no host.** 1.0.0 kept it in the list OpenAI hosts
+  read, as 0.4.12 defined it, so that the published ChatGPT app would not lose "more like
+  this one" before `search_photos_by_image` with `photo_id` was live there. It is live
+  now, and the alias goes, with `PEXAFY_SIMILAR_ALIAS` and the file that held the 0.4.12
+  definition. A call under the old name is still answered by the by-image search, like
+  every name 0.4.x published, until the logs show none.
+
 ## [1.0.0] — 2026-10-03
 
 In short: five tools where there were three, a search surface of one sentence and one
