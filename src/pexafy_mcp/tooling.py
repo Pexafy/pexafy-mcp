@@ -110,8 +110,7 @@ PUBLIC_TOOL_NAMES = {
 # Names an older snapshot may still send, which compat.py translates to the current
 # ones: the long names the two searches carried on preprod, and the short names briefly
 # tried for the file and selection tools. The 0.4.x search names need no entry (they
-# are the current ones); `get_similar_photos` is mapped in compat.RENAMED_TOOLS, and
-# still listed for an OpenAI host (compat.ListSimilarAlias).
+# are the current ones); `get_similar_photos` is mapped in compat.RENAMED_TOOLS.
 LEGACY_TOOL_NAMES = {
     "search_photos_from_unsplash_pexels_pixabay_by_text": PUBLIC_TOOL_NAMES["search_photos"],
     "search_photos_from_unsplash_pexels_pixabay_by_image": PUBLIC_TOOL_NAMES["search_photos_by_image"],

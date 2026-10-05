@@ -52,8 +52,7 @@ User-Agent (measured 2026-10-02):
 
 A `(Codex)` in the request's User-Agent, or a `clientInfo` naming Codex, is Codex
 (is_codex). It stays an OpenAI host: it comes through the same platform, so it keeps what
-compat.py keeps for that platform — the `get_similar_photos` alias, the 0.4.12 grid's
-window. But it is not known to show the grid, and taken for ChatGPT it was handed the
+compat.py keeps for that platform — the 0.4.12 grid's window. But it is not known to show the grid, and taken for ChatGPT it was handed the
 photographs without a single link (previews.grid_summary): its user had no way left to
 see or use them. So it reads the whole answer, links included, like any client without
 the grid and as in 0.4.12 — unless it declares MCP Apps itself (renders_grid). Its
