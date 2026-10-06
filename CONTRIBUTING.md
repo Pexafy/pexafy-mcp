@@ -32,7 +32,7 @@ afterwards.
 
 ## Project layout
 
-See **How it works** in [README.md](README.md). In short: the text search is generated
+See **How it works** in [DEVELOPMENT.md](DEVELOPMENT.md). In short: the text search is generated
 from the vendored `src/pexafy_mcp/assets/openapi.json` and tuned for an LLM in
 `tooling.py`; the other four tools are written by hand in `server.py`, `selection.py`
 and `linking.py`. Importing the package does no network I/O; all construction happens

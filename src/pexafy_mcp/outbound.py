@@ -13,7 +13,7 @@ caller's address as each proxy reported it (`cf-connecting-ip`, `x-forwarded-for
 header a client cared to add, the API's internal ones included (`x-pexafy-probe` leaves
 a key's dates of use as they were). The API writes the address of every call to its
 call log (`api_key_calls.client_ip`, 90 days, shown on the staff screen of each key): the
-person's address landed there, which the README says never travels.
+person's address landed there, which DEVELOPMENT.md says never travels.
 
 So each request is rebuilt on an allow-list (`restrict`): the headers httpx writes for
 that request — its `host`, and its body's `content-type`, `content-length` or
