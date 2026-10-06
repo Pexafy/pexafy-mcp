@@ -6,6 +6,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **The README is a short page, for the people who install the server.** It is what a
+  directory shows on the server's page: GitHub's MCP Registry, and VS Code's MCP gallery
+  with it, carry the README whole. A banner made of the grid as it is, buttons to install
+  in VS Code, ChatGPT, Cursor and Claude, the five tools in a table, where the photographs
+  come from. Everything it held before (each client, each tool in detail, the grid,
+  accounts and allowances, upgrading, self-hosting, how it works, development) is in
+  DEVELOPMENT.md, unchanged.
+
 ### Added
 - **The server names its website and its icon.** `serverInfo` now carries `websiteUrl`
   (`https://pexafy.com/mcp/`) and `icons`: VS Code draws the icon beside the server in
