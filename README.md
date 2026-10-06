@@ -421,7 +421,8 @@ src/pexafy_mcp/
 ├── __main__.py      # python -m pexafy_mcp
 └── assets/          # vendored, shipped with the package:
     ├── openapi.json                    # snapshot of the Pexafy API spec the text search is generated from
-    └── ext_apps_bundle.js              # @modelcontextprotocol/ext-apps SDK, inlined into the grid
+    ├── ext_apps_bundle.js              # @modelcontextprotocol/ext-apps SDK, inlined into the grid
+    └── icon-256.png, icon-48.png       # the Pexafy mark: serverInfo.icons, served at /icon-256.png and /icon-48.png
 ```
 
 - **One generated tool, four written by hand.** `search_photos` is generated from the

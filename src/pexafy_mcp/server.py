@@ -60,6 +60,7 @@ from fastmcp.server.providers.openapi import MCPType, OpenAPITool, RouteMap  # n
 from mcp.types import (  # noqa: E402
     BlobResourceContents,
     EmbeddedResource,
+    Icon,
     ImageContent,
     TextContent,
     ToolAnnotations,
@@ -745,6 +746,29 @@ FAVICON_SVG = (
     'font-family="Inter, system-ui, sans-serif" font-weight="700" font-size="38" '
     'fill="url(#g)">P</text></svg>'
 )
+
+# What the server says about itself in `serverInfo` (MCP `Implementation`), next to its
+# name and version: where to read about it, and its icon. VS Code draws that icon beside
+# the server in its MCP list, and takes it from an HTTP server only at the server's own
+# address, or inline (code.visualstudio.com, "Icons"). So the HTTP server points at the
+# PNGs it serves itself (below, the ones the plugin listings use) and at its favicon; a
+# stdio server has no address and carries the small PNG inline.
+WEBSITE_URL = "https://pexafy.com/mcp/"
+ICON_SIZES = {"icon-256.png": "256x256", "icon-48.png": "48x48"}
+
+
+def _asset_bytes(name: str) -> bytes:
+    return (Path(__file__).resolve().parent / "assets" / name).read_bytes()
+
+
+def server_icons() -> list[Icon]:
+    if TRANSPORT == "http":
+        base = MCP_PUBLIC_URL.rstrip("/")
+        icons = [Icon(src=f"{base}/{name}", mimeType="image/png", sizes=[size])
+                 for name, size in ICON_SIZES.items()]
+        return icons + [Icon(src=f"{base}/favicon.svg", mimeType="image/svg+xml", sizes=["any"])]
+    inline = base64.b64encode(_asset_bytes("icon-48.png")).decode("ascii")
+    return [Icon(src=f"data:image/png;base64,{inline}", mimeType="image/png", sizes=["48x48"])]
 
 # The tools whose answer is not a page of photographs, and which therefore must not
 # carry the inline grid.
@@ -1607,6 +1631,8 @@ def build_server() -> FastMCP:
         # like a release of it.
         # `from_openapi` forwards **settings to the FastMCP constructor.
         version=__version__,
+        website_url=WEBSITE_URL,
+        icons=server_icons(),
         mcp_names=mcp_names,
         mcp_component_fn=_generated_tool_customizer(borrowed_schemas, grid=grid),
         auth=auth_provider,
@@ -2313,6 +2339,13 @@ def build_server() -> FastMCP:
     @mcp.custom_route("/favicon.svg", methods=["GET"])
     async def favicon(_request: Request) -> Response:
         return Response(FAVICON_SVG, media_type="image/svg+xml",
+                        headers={"Cache-Control": "public, max-age=86400"})
+
+    # The icon `serverInfo` points at (server_icons), at this server's own address.
+    @mcp.custom_route("/icon-256.png", methods=["GET"])
+    @mcp.custom_route("/icon-48.png", methods=["GET"])
+    async def icon(request: Request) -> Response:
+        return Response(_asset_bytes(request.url.path.lstrip("/")), media_type="image/png",
                         headers={"Cache-Control": "public, max-age=86400"})
 
     logger.info("Pexafy MCP ready — transport=%s oauth=%s api=%s", TRANSPORT, OAUTH_ENABLED, API_BASE_URL)

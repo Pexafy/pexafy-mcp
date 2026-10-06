@@ -735,6 +735,37 @@ def test_the_connector_has_an_icon_on_any_address(path):
     assert response.text == server.FAVICON_SVG and ">P</text></svg>" in response.text
 
 
+@pytest.mark.parametrize(("path", "size"), [("/icon-256.png", 256), ("/icon-48.png", 48)])
+def test_the_icon_of_server_info_is_served_at_the_server_s_address(path, size):
+    """VS Code takes an HTTP server's icon only from that server's own address."""
+    response = _http_get(path)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
+    assert response.content[:8] == b"\x89PNG\r\n\x1a\n"
+    assert int.from_bytes(response.content[16:20], "big") == size
+
+
+async def test_server_info_names_the_website_and_the_icon():
+    from fastmcp import Client
+    async with Client(server.build_server()) as client:
+        info = client.initialize_result.serverInfo
+    assert info.websiteUrl == "https://pexafy.com/mcp/"
+    # The tests run the stdio default: no address, so the small PNG travels inline.
+    [icon] = info.icons
+    assert icon.mimeType == "image/png" and icon.sizes == ["48x48"]
+    assert icon.src.startswith("data:image/png;base64,iVBORw0KGgo")
+
+
+def test_an_http_server_points_its_icons_at_its_own_address(monkeypatch):
+    monkeypatch.setattr(server, "TRANSPORT", "http")
+    monkeypatch.setattr(server, "MCP_PUBLIC_URL", "https://mcp.example.com/")
+    icons = server.server_icons()
+    assert [i.src for i in icons] == ["https://mcp.example.com/icon-256.png",
+                                      "https://mcp.example.com/icon-48.png",
+                                      "https://mcp.example.com/favicon.svg"]
+    assert [i.mimeType for i in icons] == ["image/png", "image/png", "image/svg+xml"]
+
+
 def test_a_failing_health_check_keeps_the_detail_in_the_log(monkeypatch, caplog):
     """The probe is public: what went wrong goes to the log, the answer says only that
     something did."""

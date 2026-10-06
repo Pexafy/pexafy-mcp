@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **The server names its website and its icon.** `serverInfo` now carries `websiteUrl`
+  (`https://pexafy.com/mcp/`) and `icons`: VS Code draws the icon beside the server in
+  its MCP list, and accepts it from an HTTP server only at that server's own address. So
+  the server serves the Pexafy mark itself, `/icon-256.png` and `/icon-48.png` (the PNGs
+  of the plugin listings), next to `/favicon.svg`; over stdio, with no address, the
+  48-pixel PNG travels inline as a data URI.
+
 ### Changed
 - **The server instructions open on when to use the server.** OpenAI asks for the most
   important details in the first 512 characters of this field. The sentence on what
