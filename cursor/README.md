@@ -1,8 +1,8 @@
 # Pexafy for Cursor
 
-Find free stock photographs without leaving Cursor. Describe the scene you need, in any language, or give a link to an image you want free alternatives to, and the agent searches Pexafy's own index of free-licence photographs, collected from Unsplash, Pexels, Pixabay and other libraries. Each photograph comes with the credit line to display, a link to the image and its page at the source, ready for the landing page, README, mock-up or blog post you are working on.
+Find real, free-to-use photographs without leaving Cursor. Say what you need, in your own words, for the landing page, README, mock-up or blog post you are working on, or give a link to an image you want free alternatives to: the agent writes the search, and Pexafy matches the scene in its own index of free-licence photographs, collected from Unsplash, Pexels, Pixabay and other libraries. Each photograph comes with the credit line to display, a link to the image and its page at the source.
 
-In Cursor's chat, the results appear as an interactive grid: narrow it to landscape, portrait or square, like the photographs you want with the heart, and press ≈ on one to see similar photographs. The agent can then read the photographs you liked and work with exactly those.
+Then you choose together. In Cursor's chat the results appear as an interactive grid: narrow it to landscape, portrait or square, like the photographs you want with the heart, and press ≈ on one to see similar photographs. The agent reads the photographs you liked, in your order, and works with exactly those. Or let it place the photographs straight into your files, with their credit lines.
 
 ## What the plugin contains
 
