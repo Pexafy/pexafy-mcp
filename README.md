@@ -51,7 +51,7 @@ Your picks go back to the assistant **in your order**, with the licence and the 
 
 ## Add it in 30 seconds
 
-| | |
+| Where | How |
 |---|---|
 | **VS Code** | [Install in VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=pexafy&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.pexafy.com%2Fmcp%22%7D), or `code --add-mcp '{"name":"pexafy","type":"http","url":"https://mcp.pexafy.com/mcp"}'` |
 | **ChatGPT** | [Add Pexafy](https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy) from ChatGPT's plugin directory |
