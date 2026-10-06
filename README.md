@@ -21,33 +21,39 @@
 
 <br>
 
-## Describe it. Choose it. Use it.
+## Ask. Choose together. Put them to work.
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
-### 🗣️ Describe
+### 🗣️ Ask, in your own words
 
-One sentence, any language: *“someone working alone late at night, lit only by a warm desk lamp”*. Pexafy matches the **scene**, not tags.
-
-</td>
-<td width="33%" valign="top">
-
-### ❤️ Choose
-
-Sixteen photographs land in a grid **inside the chat**. Open one large, swipe, heart the keepers, press **≈** for more like it.
+Tell your assistant what you are working on, the way you would tell a colleague: *“I'm writing a short article about Kyoto in autumn. Find photos of a temple garden with red maple leaves.”* It writes the search; Pexafy matches the scene, not tags.
 
 </td>
 <td width="33%" valign="top">
 
-### 📎 Use
+### 🤝 Choose together
 
-Your picks go back to the assistant **in your order**, with the licence and the credit line to display, or as an **image file** for a slide, a post or a doc.
+Sixteen photographs come back. Open one large, swipe, heart the keepers, press **≈** for more like it: your picks go back to the assistant, **in your order**. Or simply answer in words: *“the third one, but wider”*.
+
+</td>
+<td width="33%" valign="top">
+
+### 🚀 Put them to work
+
+The assistant carries on with them: the article with its photos in place, the slide, the landing page, the post. Each photograph keeps its licence and the credit line to display, and comes as an **image file** when the work needs one.
 
 </td>
 </tr>
 </table>
+
+## With the grid, or without it
+
+| In a chat that draws it | In an agent, a terminal or a script |
+|---|---|
+| **ChatGPT, Claude, VS Code, Cursor.** The photographs appear as a grid in the conversation. You see them, open them, like them; the assistant works from what you picked. | **Claude Code, Codex, any MCP client.** Each result arrives as a link with its licence and credit line. The assistant chooses, fetches the file and places it in your Markdown, HTML, slides or CMS. |
 
 ## Add it in 30 seconds
 
@@ -71,8 +77,6 @@ Your picks go back to the assistant **in your order**, with the licence and the 
 | `get_photo_file_by_photo_id` | One photograph as an image file, up to 1280 px wide, with its credit line. |
 | `get_grid_selected_photos` | The photographs you liked in the grid, in the order you chose. |
 | `connect_account` | Links your Pexafy account, right from the conversation. |
-
-Where the host renders MCP Apps (ChatGPT, Claude, VS Code), results arrive as the grid above. Everywhere else, each one comes back as a link with its credit line.
 
 ## Where the photos come from
 
