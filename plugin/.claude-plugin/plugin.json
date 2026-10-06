@@ -1,7 +1,7 @@
 {
   "name": "pexafy",
   "displayName": "Pexafy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find free stock photographs for articles, slides, web pages and posts by describing the scene or linking an image. Each photograph comes with its credit line. Uses the Pexafy connector.",
   "author": {
     "name": "Pexafy",

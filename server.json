@@ -3,8 +3,25 @@
   "name": "com.pexafy/pexafy-mcp",
   "title": "Pexafy",
   "description": "Find free-to-use stock photos by words, by image or by similarity; every result names its licence.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "websiteUrl": "https://pexafy.com/mcp/",
+  "icons": [
+    {
+      "src": "https://mcp.pexafy.com/icon-256.png",
+      "mimeType": "image/png",
+      "sizes": ["256x256"]
+    },
+    {
+      "src": "https://mcp.pexafy.com/icon-48.png",
+      "mimeType": "image/png",
+      "sizes": ["48x48"]
+    },
+    {
+      "src": "https://mcp.pexafy.com/favicon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": ["any"]
+    }
+  ],
   "repository": {
     "url": "https://github.com/Pexafy/pexafy-mcp",
     "source": "github",

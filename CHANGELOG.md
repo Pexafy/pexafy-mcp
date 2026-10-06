@@ -6,14 +6,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
-- **The README is a short page, for the people who install the server.** It is what a
-  directory shows on the server's page: GitHub's MCP Registry, and VS Code's MCP gallery
-  with it, carry the README whole. A banner made of the grid as it is, buttons to install
-  in VS Code, ChatGPT, Cursor and Claude, the five tools in a table, where the photographs
-  come from. Everything it held before (each client, each tool in detail, the grid,
-  accounts and allowances, upgrading, self-hosting, how it works, development) is in
-  DEVELOPMENT.md, unchanged.
+## [1.0.1] — 2026-10-07
+
+In short: the five tools are unchanged. The server and its registry entry now name the
+website and carry the Pexafy icon, the instructions open on when to use the server, the
+old similar-photos alias is gone, a Cursor plugin ships from the repository, and the
+README is rewritten for the people who install the server.
 
 ### Added
 - **The server names its website and its icon.** `serverInfo` now carries `websiteUrl`
@@ -22,6 +20,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the server serves the Pexafy mark itself, `/icon-256.png` and `/icon-48.png` (the PNGs
   of the plugin listings), next to `/favicon.svg`; over stdio, with no address, the
   48-pixel PNG travels inline as a data URI.
+- **The registry entry carries the icon too.** `server.json` lists the same three icons
+  as `serverInfo`, at the server's own address: `https://mcp.pexafy.com/icon-256.png`,
+  `/icon-48.png` and `/favicon.svg`. A directory that reads the official registry —
+  GitHub's MCP Registry, and the VS Code gallery it feeds, among them — has the mark to
+  show beside the server.
+- **A Cursor plugin, in `cursor/`.** Cursor's marketplace form takes only the
+  repository's root URL, so `.cursor-plugin/marketplace.json` at the root points to it:
+  the hosted server, with no header and nothing secret in it, the find-stock-photos
+  skill copied from `skills/`, the logo, a README and the licence. Like the Claude
+  plugin, it takes the server's version.
 
 ### Changed
 - **The server instructions open on when to use the server.** OpenAI asks for the most
@@ -29,6 +37,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Pexafy is used to come first and took 167 of them, leaving room for one whole bullet
   of triggers. It now follows the bullets: three fit whole in the 512, with the start of
   the fourth. No word changed, and the length is the same.
+- **The README is a short page, for the people who install the server.** It is what a
+  directory shows on the server's page: GitHub's MCP Registry, and VS Code's MCP gallery
+  with it, carry the README whole. A banner made of the grid as it is, buttons to install
+  in VS Code, ChatGPT, Cursor and Claude, the five tools in a table, where the photographs
+  come from. Everything it held before (each client, each tool in detail, the grid,
+  accounts and allowances, upgrading, self-hosting, how it works, development) is in
+  DEVELOPMENT.md, unchanged.
 
 ### Removed
 - **`get_similar_photos` is listed to no host.** 1.0.0 kept it in the list OpenAI hosts

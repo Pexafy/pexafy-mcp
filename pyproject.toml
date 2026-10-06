@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pexafy-mcp"
-version = "1.0.0"
+version = "1.0.1"
 description = "MCP server for Pexafy's free stock photo search — by words, by image or by a Pexafy photo — with an inline result grid."
 readme = "README.md"
 requires-python = ">=3.12"
