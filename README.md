@@ -1,14 +1,14 @@
 <p align="center">
   <a href="https://pexafy.com/mcp/">
-    <img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/docs/readme-vitrine/docs/assets/readme-hero.png" width="100%" alt="Pexafy MCP server. Real photos, right in the chat: a grid of free-to-use photographs with their credits, and one opened large with buttons to like it, find more like it or download it.">
+    <img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/readme-hero.png" width="100%" alt="Pexafy MCP server. Real photos, right in the chat: a grid of free-to-use photographs with their credits, and one opened large with buttons to like it, find more like it or download it.">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://insiders.vscode.dev/redirect/mcp/install?name=pexafy&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.pexafy.com%2Fmcp%22%7D"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/docs/readme-vitrine/docs/assets/badge-vscode.png" height="46" alt="Install in VS Code"></a>
-  <a href="https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/docs/readme-vitrine/docs/assets/badge-chatgpt.png" height="46" alt="Add to ChatGPT"></a>
-  <a href="https://cursor.com/en/install-mcp?name=pexafy&config=eyJ1cmwiOiJodHRwczovL21jcC5wZXhhZnkuY29tL21jcCJ9"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/docs/readme-vitrine/docs/assets/badge-cursor.png" height="46" alt="Add to Cursor"></a>
-  <a href="https://pexafy.com/mcp/#setup"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/docs/readme-vitrine/docs/assets/badge-claude.png" height="46" alt="Connect Claude"></a>
+  <a href="https://insiders.vscode.dev/redirect/mcp/install?name=pexafy&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.pexafy.com%2Fmcp%22%7D"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-vscode.png" height="46" alt="Install in VS Code"></a>
+  <a href="https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-chatgpt.png" height="46" alt="Add to ChatGPT"></a>
+  <a href="https://cursor.com/en/install-mcp?name=pexafy&config=eyJ1cmwiOiJodHRwczovL21jcC5wZXhhZnkuY29tL21jcCJ9"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-cursor.png" height="46" alt="Add to Cursor"></a>
+  <a href="https://pexafy.com/mcp/#setup"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-claude.png" height="46" alt="Connect Claude"></a>
 </p>
 
 <h3 align="center">Ask for a photo the way you would describe it to a person.<br>Get real, free-to-use photographs back, inside the conversation, credits included.</h3>
