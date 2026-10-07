@@ -11,7 +11,7 @@
     {
       "name": "pexafy",
       "source": "cursor",
-      "description": "Find free stock photos by describing the scene or giving a reference image, each with its credit line."
+      "description": "Say what you need and the agent finds free-to-use photos: choose them together in a grid, or let it place them in your files, each with its credit line."
     }
   ]
 }
