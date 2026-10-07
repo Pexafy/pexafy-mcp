@@ -741,7 +741,78 @@ def prune_output_schema(schema: dict | None, *, grid: bool = True) -> dict | Non
     required = schema.get("required")
     if isinstance(required, list):
         schema["required"] = [r for r in required if r not in REMOVE_RESULT_FIELDS]
+    # The spec writes a nullable field `type: ["integer", "null"]` (width, height, the
+    # photographer's name, the source page, the alt text). Legal JSON Schema, but a
+    # client that maps tool schemas onto a single-`type` dialect — the OpenAPI subset of
+    # Gemini's function declarations — may refuse the tool or drop the constraint: MCP
+    # Inspector's portability check flagged the five fields on both searches.
+    split_type_lists(schema)
     return schema
+
+
+# Keywords that constrain values of one JSON type only. When a `type` list is split,
+# each goes on the branch of its type, where it constrains exactly what it did before.
+_KEYWORDS_BY_TYPE = {
+    "string": ("format", "minLength", "maxLength", "pattern",
+               "contentEncoding", "contentMediaType"),
+    "integer": ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"),
+    "number": ("minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf"),
+    "array": ("items", "prefixItems", "minItems", "maxItems", "uniqueItems", "contains"),
+    "object": ("properties", "patternProperties", "additionalProperties", "required",
+               "minProperties", "maxProperties", "propertyNames"),
+}
+# Where a schema holds other schemas: as a map of them, as one, or as a list of them.
+# `enum`, `const`, `default` and `examples` hold values, not schemas, and are left alone.
+_SCHEMA_MAPS = ("properties", "patternProperties", "$defs", "definitions", "dependentSchemas")
+_SCHEMA_VALUES = ("items", "additionalProperties", "not", "if", "then", "else", "contains",
+                  "propertyNames", "unevaluatedItems", "unevaluatedProperties")
+_SCHEMA_LISTS = ("anyOf", "oneOf", "allOf", "prefixItems")
+
+
+def split_type_lists(schema) -> None:
+    """Rewrite, in place, every `type: [a, b]` of a schema as `anyOf: [{type: a}, {type: b}]`.
+
+    The same values validate before and after. The keywords of one type move to its
+    branch (`format: uri` goes with `string`); the rest — the description, the title —
+    stays on the field. A schema that already has an `anyOf` keeps it: the two unions
+    must both hold, so they are joined under `allOf`.
+    """
+    if not isinstance(schema, dict):
+        return
+    for key in _SCHEMA_MAPS:
+        if isinstance(schema.get(key), dict):
+            for sub in schema[key].values():
+                split_type_lists(sub)
+    for key in _SCHEMA_VALUES:
+        value = schema.get(key)
+        for sub in value if isinstance(value, list) else [value]:
+            split_type_lists(sub)
+    for key in _SCHEMA_LISTS:
+        if isinstance(schema.get(key), list):
+            for sub in schema[key]:
+                split_type_lists(sub)
+    types = schema.get("type")
+    if not isinstance(types, list):
+        return
+    if len(types) == 1:
+        schema["type"] = types[0]
+        return
+    branches = []
+    for name in types:
+        branch = {"type": name}
+        for keyword in _KEYWORDS_BY_TYPE.get(name, ()):
+            if keyword in schema:
+                branch[keyword] = schema[keyword]
+        branches.append(branch)
+    for name in types:
+        for keyword in _KEYWORDS_BY_TYPE.get(name, ()):
+            schema.pop(keyword, None)
+    del schema["type"]
+    if "anyOf" in schema:
+        schema["allOf"] = [*schema.get("allOf", []), {"anyOf": schema.pop("anyOf")},
+                           {"anyOf": branches}]
+    else:
+        schema["anyOf"] = branches
 
 
 def apply_schema_keywords(schema: dict, keywords: dict) -> None:

@@ -194,6 +194,45 @@ async def test_the_by_image_tool_borrows_the_search_result_schema():
     assert schemas[tooling.PUBLIC_TOOL_NAMES["search_photos_by_image"]] == schemas[tooling.PUBLIC_TOOL_NAMES["search_photos"]]
 
 
+def _type_lists(node, path="$"):
+    """Where a schema still writes `type` as a list. Values (`enum`, `const`,
+    `default`, `examples`) are not schemas and are not searched."""
+    if isinstance(node, dict):
+        if isinstance(node.get("type"), list):
+            yield path
+        for key, value in node.items():
+            if key not in ("enum", "const", "default", "examples", "example"):
+                yield from _type_lists(value, f"{path}.{key}")
+    elif isinstance(node, list):
+        for index, value in enumerate(node):
+            yield from _type_lists(value, f"{path}[{index}]")
+
+
+@pytest.mark.parametrize("grid", [True, False])
+async def test_no_tool_schema_writes_a_type_list(monkeypatch, grid):
+    """MCP Inspector's portability check flagged ten fields, five on each search's
+    output: a nullable field written `type: [X, "null"]`, which a client mapping tool
+    schemas onto a single-`type` dialect may refuse. None is left, in any input or
+    output schema, with the grid or without it."""
+    from pexafy_mcp import previews
+
+    monkeypatch.setattr(previews, "PREVIEWS_AVAILABLE", grid)
+    for tool in await server.build_server().list_tools():
+        listed = tool.to_mcp_tool()
+        assert not list(_type_lists(listed.inputSchema)), (tool.name, "input")
+        assert not list(_type_lists(listed.outputSchema)), (tool.name, "output")
+
+
+async def test_the_nullable_photo_fields_stay_nullable():
+    """Split, not narrowed: a photo with no known width still validates, and the
+    source page keeps its `format`."""
+    schemas = {t.name: t.to_mcp_tool().outputSchema for t in await server.build_server().list_tools()}
+    photo = schemas[tooling.PUBLIC_TOOL_NAMES["search_photos"]]["properties"]["data"]["items"]["properties"]
+    for name in ("width", "height", "photographer_full_name", "source_image_url", "alt_description"):
+        assert {"type": "null"} in photo[name]["anyOf"], name
+    assert {"type": "string", "format": "uri"} in photo["source_image_url"]["anyOf"]
+
+
 async def test_every_parameter_is_described():
     """An undescribed parameter is one a model has to guess at from its name alone.
 

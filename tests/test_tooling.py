@@ -369,6 +369,68 @@ def test_the_paging_block_leaves_the_output_schema():
     assert tooling.prune_output_schema(None) is None
 
 
+def _same_values(before: dict, after: dict, values) -> None:
+    import jsonschema
+    for value in values:
+        assert (jsonschema.Draft202012Validator(before).is_valid(value)
+                == jsonschema.Draft202012Validator(after).is_valid(value)), value
+
+
+def test_a_type_list_becomes_branches_of_one_type_each():
+    """MCP Inspector's portability check: `type: ["string", "null"]` is legal JSON
+    Schema, but a client that maps tool schemas onto a single-`type` dialect (Gemini's
+    function declarations) may refuse the tool or drop the constraint. Split, the field
+    accepts exactly the values it accepted, and a keyword of one type goes with it."""
+    page = {"type": ["string", "null"], "format": "uri", "description": "The page."}
+    before = copy.deepcopy(page)
+    tooling.split_type_lists(page)
+    assert page == {"description": "The page.",
+                    "anyOf": [{"type": "string", "format": "uri"}, {"type": "null"}]}
+    _same_values(before, page, (None, "https://example.com/photo/1", 3, ["x"]))
+
+    width = {"type": ["integer", "null"], "minimum": 1}
+    before = copy.deepcopy(width)
+    tooling.split_type_lists(width)
+    assert width == {"anyOf": [{"type": "integer", "minimum": 1}, {"type": "null"}]}
+    _same_values(before, width, (None, 0, 1, 4000, 2.5, "4000"))
+
+
+def test_the_split_reaches_nested_schemas_and_leaves_values_alone():
+    """Down `properties`, `items` and `$defs`; never into `default`, `enum` or
+    `examples`, which hold values, not schemas."""
+    schema = {
+        "type": "object",
+        "properties": {"data": {"type": "array", "items": {"$ref": "#/$defs/Photo"}}},
+        "$defs": {"Photo": {
+            "type": "object",
+            "properties": {"width": {"type": ["integer", "null"]}},
+            "default": {"type": ["kept", "as", "is"]},
+            "examples": [{"type": ["kept"]}],
+        }},
+    }
+    tooling.split_type_lists(schema)
+    photo = schema["$defs"]["Photo"]
+    assert photo["properties"]["width"] == {"anyOf": [{"type": "integer"}, {"type": "null"}]}
+    assert photo["default"] == {"type": ["kept", "as", "is"]}
+    assert photo["examples"] == [{"type": ["kept"]}]
+    assert tooling.split_type_lists(None) is None
+
+
+def test_a_union_already_there_is_kept_under_all_of():
+    """Both unions must hold: dropping either would accept values the field refused."""
+    field = {"type": ["string", "null"], "anyOf": [{"maxLength": 3}, {"type": "null"}]}
+    before = copy.deepcopy(field)
+    tooling.split_type_lists(field)
+    assert "type" not in field and set(field) == {"allOf"}
+    _same_values(before, field, (None, "ab", "abcd", 1))
+
+
+def test_a_type_list_of_one_is_a_plain_type():
+    field = {"type": ["string"], "maxLength": 3}
+    tooling.split_type_lists(field)
+    assert field == {"type": "string", "maxLength": 3}
+
+
 def test_the_shipped_snapshot_exposes_exactly_the_allowed_parameters():
     """Every test above runs on a hand-written spec, which proves the filter runs but
     never what it lets through: the tools are built from assets/openapi.json, and that
