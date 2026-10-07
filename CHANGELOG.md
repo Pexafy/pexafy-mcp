@@ -6,6 +6,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **No tool schema writes a nullable field as a `type` list.** Both searches declared
+  `width`, `height`, `photographer_full_name`, `source_image_url` and `alt_description`
+  as `type: [X, "null"]`, as the API's spec does. That is legal JSON Schema, but MCP
+  Inspector's portability check flags it: a client that maps tool schemas onto a
+  single-`type` dialect, such as Gemini's function declarations, may refuse the tool or
+  drop the constraint. Each field is now `anyOf: [{type: X}, {type: "null"}]`, which
+  accepts the same values, and a test keeps every input and output schema free of
+  `type` lists.
+
 ## [1.0.1] — 2026-10-07
 
 In short: the five tools are unchanged. The server and its registry entry now name the
