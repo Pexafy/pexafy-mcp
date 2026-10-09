@@ -84,11 +84,14 @@ async def test_the_schemes_are_mirrored_in_meta_beside_what_is_there():
     only read `_meta`". Merged into the tool's `_meta`, never in its place: the grid
     link and the status texts must survive it."""
     from fastmcp import Client
+    from mcp.types import Implementation
 
     from pexafy_mcp import tooling
     from pexafy_mcp.server import build_server
 
-    async with Client(build_server()) as client:
+    # Listed as ChatGPT, the host that reads the status texts (a client named "mcp", the
+    # test client's default, reads the list without them: compat.DropToolStatusForStrictClients).
+    async with Client(build_server(), client_info=Implementation(name="openai-mcp", version="1")) as client:
         tools = {t.name: t for t in await client.list_tools()}
 
     for tool in tools.values():
