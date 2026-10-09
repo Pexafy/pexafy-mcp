@@ -178,6 +178,44 @@ class DropRetiredParams(Middleware):
         return await call_next(context)
 
 
+# ── ChatGPT's status lines, to a client that refuses their names ──────────────
+# Every tool's `_meta` carries `openai/toolInvocation/invoking` and `…/invoked`: the line
+# ChatGPT shows while the tool runs, and once it has run (server.TOOL_STATUS). Both names
+# hold a second slash, which the MCP key-name format leaves out (revision 2025-06-18: an
+# optional prefix ending in a slash, then a name of alphanumerics, hyphens, underscores
+# and dots). Microsoft Agent Framework checks every key of every listed tool against that
+# format and, on the first that fails, loads no tool at all — "Invalid MCP _meta key
+# name: 'openai/toolInvocation/invoking'" (agent-framework 1.20, measured 2026-10-07).
+#
+# So a client that names itself "mcp" — the default `clientInfo.name` of the Python SDK,
+# which Microsoft Agent Framework, Agno, Pydantic AI and Strands all keep — reads the list
+# without those two keys. None of them shows a status line. Every other host reads the
+# list it read before, the very same objects: ChatGPT, Claude, VS Code, Cursor, and any
+# client this server cannot place.
+STRICT_META_CLIENT_NAMES = frozenset({"mcp"})
+TOOL_STATUS_META_KEYS = ("openai/toolInvocation/invoking", "openai/toolInvocation/invoked")
+
+
+class DropToolStatusForStrictClients(Middleware):
+    """List the tools without ChatGPT's status lines to a client named "mcp". Every
+    other client gets the list unchanged."""
+
+    async def on_list_tools(self, context: MiddlewareContext, call_next):
+        tools = await call_next(context)
+        if hosts.client_name(context).strip().lower() not in STRICT_META_CLIENT_NAMES:
+            return tools
+        return [_without_tool_status(tool) for tool in tools]
+
+
+def _without_tool_status(tool):
+    """`tool`, or a copy of it whose `_meta` has no status line."""
+    meta = getattr(tool, "meta", None)
+    if not meta or not any(key in meta for key in TOOL_STATUS_META_KEYS):
+        return tool
+    kept = {key: value for key, value in meta.items() if key not in TOOL_STATUS_META_KEYS}
+    return tool.model_copy(update={"meta": kept or None})
+
+
 # ── The 0.4.12 grid, still in ChatGPT's cache ─────────────────────────────────
 # The grid keeps its URI, `ui://pexafy/grid.html`, from 0.4.12 to 1.0.0, and "ChatGPT may
 # continue serving cached resource contents for up to one hour" after a deploy

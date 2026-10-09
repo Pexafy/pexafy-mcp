@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import base64
 import copy
+import json
+import re
 
 import httpx
 import jsonschema
@@ -555,3 +557,45 @@ async def test_a_call_under_the_old_name_is_a_search_by_image(grid_on, fake_api,
         assert request.content == b""
     assert "Renamed tool call: get_similar_photos -> search_photos_by_image" in caplog.text
     assert "Retired parameter(s) ignored on search_photos_by_image: cursor" in caplog.text
+
+
+# ── ChatGPT's status lines, to a client named "mcp" ────────────────────────────
+# The key-name format Microsoft Agent Framework enforces on every listed tool (MCP,
+# revision 2025-06-18): an optional dotted prefix ending in a slash, then a name.
+_LABEL = r"[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?"
+MCP_META_KEY = re.compile(rf"^(?:{_LABEL}(?:\.{_LABEL})*/)?[A-Za-z0-9](?:[A-Za-z0-9_.-]*[A-Za-z0-9])?$")
+
+
+def _on_the_wire(tool) -> dict:
+    return tool.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+async def test_a_client_named_mcp_reads_only_meta_keys_in_the_mcp_format(grid_on):
+    for tool in await _listed_to("mcp"):
+        bad = [key for key in (tool.meta or {}) if not MCP_META_KEY.fullmatch(key)]
+        assert not bad, (tool.name, bad)
+
+
+async def test_a_client_named_mcp_loses_the_status_lines_and_nothing_else(grid_on, monkeypatch):
+    after = {t.name: _on_the_wire(t) for t in await _listed_to("mcp")}
+    monkeypatch.setattr(compat, "STRICT_META_CLIENT_NAMES", frozenset())
+    before = {t.name: _on_the_wire(t) for t in await _listed_to("mcp")}
+    assert after.keys() == before.keys()
+    assert any(key in (tool.get("_meta") or {})
+               for tool in before.values() for key in compat.TOOL_STATUS_META_KEYS)
+    for name, tool in before.items():
+        meta = {k: v for k, v in (tool.get("_meta") or {}).items()
+                if k not in compat.TOOL_STATUS_META_KEYS}
+        expected = {k: v for k, v in tool.items() if k != "_meta"}
+        if meta:
+            expected["_meta"] = meta
+        assert after[name] == expected, name
+
+
+@pytest.mark.parametrize("client_name", ["mcp-inspector", *[h for h in HOSTS if h]])
+async def test_every_other_host_reads_the_list_it_read_before(grid_on, monkeypatch, client_name):
+    """Byte for byte, key order included: the same list with the middleware as without."""
+    listed = json.dumps([_on_the_wire(t) for t in await _listed_to(client_name)])
+    monkeypatch.setattr(compat, "STRICT_META_CLIENT_NAMES", frozenset())
+    assert json.dumps([_on_the_wire(t) for t in await _listed_to(client_name)]) == listed
+    assert "openai/toolInvocation/invoking" in listed

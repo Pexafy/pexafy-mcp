@@ -1951,6 +1951,10 @@ def build_server() -> FastMCP:
     # filters: the names are translated and the filters dropped, so the call answers
     # instead of failing on "unexpected keyword argument". See compat.py.
     mcp.add_middleware(compat.DropRetiredParams())
+    # …and a client named "mcp" (the Python SDK's default) reads the list without
+    # ChatGPT's status lines, whose key names Microsoft Agent Framework refuses along
+    # with every tool. Every other host reads the list unchanged. See compat.py.
+    mcp.add_middleware(compat.DropToolStatusForStrictClients())
     # Arguments the API would answer badly are refused here, with a message the caller
     # can act on: a `photo_id` that is not one (a rank), a blank or overlong sentence,
     # an unknown shape. After compat, so they see the current names. See guards.py.

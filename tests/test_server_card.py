@@ -98,8 +98,12 @@ def test_it_carries_what_a_client_lists(reload_with_env, monkeypatch):
     mcp = server.build_server()
     card = _get(mcp.http_app(), PATH).json()
 
+    # A client this server cannot place, as a directory's is. Not the test client's
+    # default name, "mcp", whose list has no status lines (compat.DropToolStatusForStrictClients).
+    from mcp.types import Implementation
+
     async def listed():
-        async with Client(mcp) as client:
+        async with Client(mcp, client_info=Implementation(name="card-check", version="1")) as client:
             return (await client.list_tools(), await client.list_resources(),
                     await client.list_prompts())
 
