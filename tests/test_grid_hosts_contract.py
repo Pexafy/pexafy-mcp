@@ -80,6 +80,7 @@ BODY = {
         {"photo_id": "019e-1", "alt_description": "Red fox walking in snow",
          "attribution": {"plain": "Photo by Ana on Unsplash (https://pexafy.com/legal/licenses/#unsplash)"},
          "license_type": "free", "urls": {"regular": "https://images.example/1.jpg"},
+         "source_image_url": "https://unsplash.com/photos/1",
          "preview_url": "https://thumb.example/1/480w.jpg?e=1&s=a",
          "preview_url_large": "https://thumb.example/1/1280w.jpg?s=b"},
         {"photo_id": "019e-2", "attribution": {"plain": "Photo on Pixabay (https://pexafy.com/legal/licenses/#pixabay)"},
@@ -97,14 +98,22 @@ def test_the_summary_names_the_photographs_and_carries_no_link():
     text = previews.grid_summary(json.loads(json.dumps(BODY)), "a red fox in the snow")
     assert "http" not in text
     lines = text.split("\n")
-    assert lines[0].startswith("2 photographs for “a red fox in the snow” are on the person's screen")
+    assert lines[0].startswith(
+        "2 photographs for “a red fox in the snow” are already on the person's screen")
+    # Said plainly: ChatGPT wrote the list again under the grid while it read "they need
+    # not be shown again" and each photograph's credit (2026-10-13).
+    assert ("The grid is the answer: do not list, describe, link or show them again in "
+            "your reply") in lines[0]
     assert tooling.PUBLIC_TOOL_NAMES["get_photo_file"] in lines[0]
-    assert "they need not be shown again" in lines[0]
-    assert lines[1] == "1. 019e-1 — Red fox walking in snow — Photo by Ana on Unsplash — licence: free"
-    assert lines[2] == "2. 019e-2 — Photo on Pixabay"
+    assert tooling.PUBLIC_TOOL_NAMES["get_selected_photos"] in lines[0]
+    # Each photograph by its id and description: what a follow-up needs, and nothing the
+    # grid already shows (credit, licence).
+    assert lines[1] == "1. 019e-1 — Red fox walking in snow"
+    assert lines[2] == "2. 019e-2"
     assert lines[3] == "2 searches left today without an account."
     one = previews.grid_summary({"data": [BODY["data"][0]]})
-    assert one.startswith("1 photograph is on the person's screen")
+    assert one.startswith("1 photograph is already on the person's screen")
+    assert "do not list, describe, link or show it again" in one
 
 
 async def _search_as(name: str, monkeypatch, thumb_base: str = ""):
@@ -143,7 +152,10 @@ async def test_a_host_with_the_grid_reads_no_link_and_the_grid_keeps_them(monkey
     # it never reads, which VS Code hands the model too.
     photo = result.structured_content["data"][0]
     assert "urls" not in photo
-    assert photo["attribution"]["plain"].startswith("Photo by Ana")
+    # …nor the source page, and the credit keeps its words without the licence URL,
+    # which the grid leaves out of the line it shows (2026-10-13).
+    assert "source_image_url" not in photo
+    assert photo["attribution"]["plain"] == "Photo by Ana on Unsplash"
     assert result.meta["pexafy/host"] == {"assistant": "Cursor"}
     assert result.meta["pexafy/previews"]["019e-1"]["small"] == "https://thumb.example/1/480w.jpg?e=1&s=a"
     # Its previews come without their address (2026-10-02: 32 image links were still
@@ -152,6 +164,26 @@ async def test_a_host_with_the_grid_reads_no_link_and_the_grid_keeps_them(monkey
     assert photo["preview_url_large"] == "1/1280w.jpg?s=b"
     half = json.dumps(result.structured_content)
     assert "thumb.example" not in half and "images.example" not in half
+    assert "http" not in half
+
+
+@pytest.mark.asyncio
+async def test_chatgpt_reads_no_preview_at_all_and_its_grid_keeps_them(monkeypatch):
+    """ChatGPT hands the grid the result's `_meta`, and keeps a copy for a reloaded
+    frame: the half its model reads needs no preview, not even as a path — a path it
+    turned into a picture that could not load, under the grid (2026-10-13)."""
+    result = await _search_as("openai-mcp", monkeypatch, thumb_base="https://thumb.example")
+    assert result.content[0].text.startswith("2 photographs for “a red fox” are already")
+    for photo in result.structured_content["data"]:
+        for gone in ("urls", "source_image_url", "preview_url", "preview_url_large"):
+            assert gone not in photo
+    assert "http" not in json.dumps(result.structured_content)
+    assert "1/480w.jpg" not in json.dumps(result.structured_content)
+    # The grid's own copy is whole.
+    assert result.meta["pexafy/previews"]["019e-1"] == {
+        "small": "https://thumb.example/1/480w.jpg?e=1&s=a",
+        "large": "https://thumb.example/1/1280w.jpg?s=b"}
+    assert result.meta["pexafy/host"] == {"assistant": "ChatGPT"}
 
 
 @pytest.mark.asyncio
@@ -169,6 +201,14 @@ async def test_a_client_without_the_grid_reads_the_whole_answer(monkeypatch):
     body = json.loads(result.content[0].text)
     assert body["data"][0]["urls"]["regular"] == "https://images.example/1.jpg"
     assert result.meta["pexafy/host"] == {"assistant": "Claude"}
+    # Every address stays where the person has no grid: the text and the structured half
+    # alike carry the source page, the credit with its licence URL, the previews whole.
+    for half in (body, result.structured_content):
+        photo = half["data"][0]
+        assert photo["source_image_url"] == "https://unsplash.com/photos/1"
+        assert photo["attribution"]["plain"] == BODY["data"][0]["attribution"]["plain"]
+        assert photo["preview_url"] == "https://thumb.example/1/480w.jpg?e=1&s=a"
+        assert photo["urls"]["regular"] == "https://images.example/1.jpg"
 
 
 def test_the_selection_reads_without_its_image_links_where_the_grid_is_shown(monkeypatch):

@@ -482,6 +482,13 @@ def _clean_credit_line(line: str) -> str:
 _CREDIT_LINE = re.compile(r"^(Photo) by (.*?)( on .*)$", re.S)
 
 
+def clean_attribution(attribution: dict) -> dict:
+    """A credit as an answer sends it (prune_photo): the keys it keeps, each line
+    without a placeholder name (_clean_credit_line) and cleaned (clean_free_text)."""
+    return {k: clean_free_text(_clean_credit_line(v) if isinstance(v, str) else v)
+            for k, v in attribution.items() if k in KEEP_ATTRIBUTION_KEYS}
+
+
 def prune_photo(photo: dict) -> None:
     """Take the dead weight off one photograph, in place, and clean the text a third
     party wrote in it (clean_free_text)."""

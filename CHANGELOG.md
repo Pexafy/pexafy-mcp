@@ -7,6 +7,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Fixed
+- **ChatGPT no longer writes the photographs again under the grid.** In a host that
+  shows the grid, the model read a list of the photographs with their credits, a mild
+  "they need not be shown again", and, in `structuredContent`, each photograph's source
+  page, its credit with the licence URL and its previews as a path. ChatGPT wrote the
+  list again under the grid, each photograph as a picture that could not load and a
+  "download" link. Where the grid is shown, the text now says the grid is the answer
+  and the reply does not repeat it, names each photograph by its `photo_id` and
+  description only, and `structuredContent` loses `source_image_url` and the licence URL
+  in `attribution.plain` (the grid uses neither). In ChatGPT, whose grid reads the
+  previews from `_meta` and keeps a copy for a reloaded frame, the previews leave
+  `structuredContent` too; other hosts keep them as a path without address. A client
+  without the grid — Claude Code, Codex, a terminal, an unknown one — reads the whole
+  answer, every link included, as before.
 - **No tool schema writes a nullable field as a `type` list.** Both searches declared
   `width`, `height`, `photographer_full_name`, `source_image_url` and `alt_description`
   as `type: [X, "null"]`, as the API's spec does. That is legal JSON Schema, but MCP

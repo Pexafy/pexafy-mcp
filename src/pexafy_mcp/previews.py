@@ -243,12 +243,15 @@ class SplitPreviews(Middleware):
         if hosts.renders_grid(context):
             _name_without_links(result, structured, context)
             # VS Code hands the model the structured half too (it read the answer's
-            # content.json and listed every `urls.regular`): the grid never reads that
-            # link — it draws the signed previews — so it goes from there as well.
+            # content.json and listed every `urls.regular`), and so does ChatGPT: with
+            # the photographs' addresses in hand, it wrote them again under the grid as
+            # pictures that could not load and "download" links (2026-10-13). None of
+            # them is the grid's: it draws the signed previews from `_meta`, links each
+            # photograph to its page on Pexafy, and shows the credit without its URL.
+            whole_meta = hosts.grid_reads_meta(context)
             for photo in (structured.get("data") or []) if isinstance(structured, dict) else []:
                 if isinstance(photo, dict):
-                    photo.pop("urls", None)
-                    _previews_without_address(photo)
+                    _no_address_for_the_model(photo, whole_meta)
         return result
 
 
@@ -273,6 +276,24 @@ def _previews_without_address(photo: dict) -> None:
             photo.pop(key, None)
 
 
+def _no_address_for_the_model(photo: dict, whole_meta: bool) -> None:
+    """One photograph of an answer drawn as the grid, in the half the model reads too:
+    no address it could show or link again. `urls` and `source_image_url` go, the
+    credit keeps its words without the licence page's URL (the grid leaves that URL out
+    of the line it shows), and the previews go as well where the grid reads `_meta`
+    whole (hosts.grid_reads_meta); elsewhere they stay as a path without address."""
+    photo.pop("urls", None)
+    photo.pop("source_image_url", None)
+    credit = photo.get("attribution")
+    if isinstance(credit, dict) and isinstance(credit.get("plain"), str):
+        credit["plain"] = credit["plain"].split(" (http")[0]
+    if whole_meta:
+        photo.pop("preview_url", None)
+        photo.pop("preview_url_large", None)
+    else:
+        _previews_without_address(photo)
+
+
 def _name_without_links(result, structured: dict, context) -> None:
     """In a host that shows the grid, the text the model reads names the photographs
     without their image links (grid_summary); `structuredContent` and `_meta`, which the
@@ -289,31 +310,32 @@ def _name_without_links(result, structured: dict, context) -> None:
 
 def grid_summary(structured: dict, sentence: str = "") -> str:
     """What the model reads of a search answer in a host that shows it as the grid: the
-    photographs by `photo_id`, description, credit and licence, without their image
-    links. With the links in hand, models put the photographs in the reply again, one
-    picture after another under the grid (Cursor, 2026-10-01). A host without the grid
-    reads the whole answer, links included, as before."""
+    photographs by `photo_id` and description, without their links, credits or
+    licences, which the grid shows. With the links in hand, models put the photographs
+    in the reply again, one picture after another under the grid (Cursor, 2026-10-01);
+    with a list of credits and a mild "need not be shown again", ChatGPT still wrote the
+    list again under the grid, each photograph as a picture that did not load and a
+    "download" link (2026-10-13). So the first line says plainly that the grid is the
+    answer and the reply does not repeat it. A host without the grid reads the whole
+    answer, links included, as before."""
     photos = [p for p in (structured.get("data") or []) if isinstance(p, dict)]
     n = len(photos)
     what = f" for “{sentence}”" if sentence else ""
     verb = "is" if n == 1 else "are"
+    them = "it" if n == 1 else "them"
     lines = [
-        f"{n} photograph{'' if n == 1 else 's'}{what} {verb} on the person's screen in the "
-        "Pexafy grid, with their credits: the person opens, likes and refines them there. "
-        "This text names them without their image links, and they need not be shown again. "
-        "When the person wants one as a file, to insert, attach or download it, "
-        f"{tooling.PUBLIC_TOOL_NAMES['get_photo_file']} returns it with its link."
+        f"{n} photograph{'' if n == 1 else 's'}{what} {verb} already on the person's screen "
+        "in the Pexafy grid, with their credits and licences: the person opens, likes, "
+        f"reorders and refines {them} there. The grid is the answer: do not list, describe, "
+        f"link or show {them} again in your reply; answer in one or two sentences and let "
+        "the person choose in the grid. To place one in a document, attach or download "
+        f"it, call {tooling.PUBLIC_TOOL_NAMES['get_photo_file']} with its photo_id; the ones "
+        f"the person likes come back with {tooling.PUBLIC_TOOL_NAMES['get_selected_photos']}."
     ]
     for i, p in enumerate(photos, 1):
-        plain = (p.get("attribution") or {}).get("plain") if isinstance(p.get("attribution"), dict) else ""
-        credit = (plain or "").split(" (http")[0]
         parts = [str(p.get("photo_id") or "")]
         if p.get("alt_description"):
             parts.append(str(p["alt_description"]))
-        if credit:
-            parts.append(credit)
-        if p.get("license_type"):
-            parts.append(f"licence: {p['license_type']}")
         lines.append(f"{i}. " + " — ".join(parts))
     allowance = structured.get("budget")
     if isinstance(allowance, dict) and allowance.get("message"):
