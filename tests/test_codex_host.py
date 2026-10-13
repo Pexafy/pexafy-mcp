@@ -203,7 +203,7 @@ def _reads_the_grid_summary(result: dict, keeps_paths: bool) -> None:
     and a `structuredContent` with no address left in it — ChatGPT, whose grid reads
     `_meta` whole, without the previews at all; another host with them as a path."""
     text = result["content"][0]["text"]
-    assert text.startswith("2 photographs for “a red bicycle” are already on the person's screen")
+    assert text.startswith("2 photographs for “a red bicycle” are on the person's screen in the Pexafy grid")
     assert "http" not in text
     for photo, sent in zip(result["structuredContent"]["data"], API_PHOTOS, strict=True):
         assert "urls" not in photo and "source_image_url" not in photo

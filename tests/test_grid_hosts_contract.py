@@ -99,11 +99,14 @@ def test_the_summary_names_the_photographs_and_carries_no_link():
     assert "http" not in text
     lines = text.split("\n")
     assert lines[0].startswith(
-        "2 photographs for “a red fox in the snow” are already on the person's screen")
-    # Said plainly: ChatGPT wrote the list again under the grid while it read "they need
-    # not be shown again" and each photograph's credit (2026-10-13).
-    assert ("The grid is the answer: do not list, describe, link or show them again in "
-            "your reply") in lines[0]
+        "2 photographs for “a red fox in the snow” are on the person's screen in the Pexafy grid")
+    # Facts, as "need not be shown again" was, not an order about the reply (refused by
+    # both directories, test_served_texts_compliance): what the grid is, and what a
+    # picture added below it would be. ChatGPT wrote the list again under the grid, and
+    # added pictures of its own that could not load (2026-10-13).
+    assert "the grid is this request's gallery" in lines[0]
+    assert ("The reply needs no picture or link of its own: a picture added below the grid "
+            "would be a second, different set.") in lines[0]
     assert tooling.PUBLIC_TOOL_NAMES["get_photo_file"] in lines[0]
     assert tooling.PUBLIC_TOOL_NAMES["get_selected_photos"] in lines[0]
     # Each photograph by its id and description: what a follow-up needs, and nothing the
@@ -112,8 +115,8 @@ def test_the_summary_names_the_photographs_and_carries_no_link():
     assert lines[2] == "2. 019e-2"
     assert lines[3] == "2 searches left today without an account."
     one = previews.grid_summary({"data": [BODY["data"][0]]})
-    assert one.startswith("1 photograph is already on the person's screen")
-    assert "do not list, describe, link or show it again" in one
+    assert one.startswith("1 photograph is on the person's screen in the Pexafy grid")
+    assert "reorders and refines it." in one
 
 
 async def _search_as(name: str, monkeypatch, thumb_base: str = ""):
@@ -173,7 +176,7 @@ async def test_chatgpt_reads_no_preview_at_all_and_its_grid_keeps_them(monkeypat
     frame: the half its model reads needs no preview, not even as a path — a path it
     turned into a picture that could not load, under the grid (2026-10-13)."""
     result = await _search_as("openai-mcp", monkeypatch, thumb_base="https://thumb.example")
-    assert result.content[0].text.startswith("2 photographs for “a red fox” are already")
+    assert result.content[0].text.startswith("2 photographs for “a red fox” are on the person's screen")
     for photo in result.structured_content["data"]:
         for gone in ("urls", "source_image_url", "preview_url", "preview_url_large"):
             assert gone not in photo

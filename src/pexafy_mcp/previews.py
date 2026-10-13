@@ -315,22 +315,25 @@ def grid_summary(structured: dict, sentence: str = "") -> str:
     in the reply again, one picture after another under the grid (Cursor, 2026-10-01);
     with a list of credits and a mild "need not be shown again", ChatGPT still wrote the
     list again under the grid, each photograph as a picture that did not load and a
-    "download" link (2026-10-13). So the first line says plainly that the grid is the
-    answer and the reply does not repeat it. A host without the grid reads the whole
-    answer, links included, as before."""
+    "download" link (2026-10-13), and added pictures of its own that could not load
+    either. So the first line states what the grid is and what a picture added below it
+    would be — facts, as "need not be shown again" was: an order about how to write the
+    reply is what both directories refuse (test_served_texts_compliance). A host without
+    the grid reads the whole answer, links included, as before."""
     photos = [p for p in (structured.get("data") or []) if isinstance(p, dict)]
     n = len(photos)
     what = f" for “{sentence}”" if sentence else ""
     verb = "is" if n == 1 else "are"
     them = "it" if n == 1 else "them"
     lines = [
-        f"{n} photograph{'' if n == 1 else 's'}{what} {verb} already on the person's screen "
-        "in the Pexafy grid, with their credits and licences: the person opens, likes, "
-        f"reorders and refines {them} there. The grid is the answer: do not list, describe, "
-        f"link or show {them} again in your reply; answer in one or two sentences and let "
-        "the person choose in the grid. To place one in a document, attach or download "
-        f"it, call {tooling.PUBLIC_TOOL_NAMES['get_photo_file']} with its photo_id; the ones "
-        f"the person likes come back with {tooling.PUBLIC_TOOL_NAMES['get_selected_photos']}."
+        f"{n} photograph{'' if n == 1 else 's'}{what} {verb} on the person's screen in the "
+        "Pexafy grid: the grid is this request's gallery, with each photograph's credit and "
+        f"licence, where the person opens, likes, reorders and refines {them}. The reply needs "
+        "no picture or link of its own: a picture added below the grid would be a second, "
+        f"different set. {tooling.PUBLIC_TOOL_NAMES['get_photo_file']} returns one as a file, "
+        "with its link, by its photo_id, to place in a document, attach or download; "
+        f"{tooling.PUBLIC_TOOL_NAMES['get_selected_photos']} returns the ones the person likes, "
+        "in their order."
     ]
     for i, p in enumerate(photos, 1):
         parts = [str(p.get("photo_id") or "")]

@@ -2006,16 +2006,17 @@ def build_server() -> FastMCP:
                 # What the model reads when the grid loads: the surface the reader is
                 # working in, so it stops re-listing in text what is already on screen.
                 "openai/widgetDescription": (
-                    "A grid of the photographs found, drawn for the reader: thumbnails with no numbers, a "
-                    "heart on each to like it, a shape filter that re-runs the search, and a swipe deck "
-                    "that opens in the grid's own place — one photograph at a time, with who took it and "
-                    "what is in it, and a ≈ button that asks for more like it. The photographs the reader "
+                    "The gallery of the photographs found for this request, drawn for the reader with "
+                    "each photograph's credit and licence: the reply needs no picture or link of its "
+                    "own. Thumbnails carry no numbers; a heart on each likes it, a shape filter re-runs "
+                    "the search, and a swipe deck opens in the grid's own place — one photograph at a "
+                    "time, with who took it and what is in it, and a ≈ button that asks for more like "
+                    "it. The photographs the reader "
                     "liked stay under the grid, numbered #1..#n on screen in the reader's order — the "
                     "order liked, which they can rearrange by dragging: those are "
                     "the numbers the reader sees and names them by (“#2”). "
-                    + (f"They are readable through {tooling.PUBLIC_TOOL_NAMES['get_selected_photos']}. "
-                       if selection_tool else "The grid passes them to you in its context. ")
-                    + "The grid already shows the photographs themselves."
+                    + (f"They are readable through {tooling.PUBLIC_TOOL_NAMES['get_selected_photos']}."
+                       if selection_tool else "The grid passes them to you in its context.")
                 ),
                 "openai/widgetCSP": {
                     "resource_domains": resource_domains,
