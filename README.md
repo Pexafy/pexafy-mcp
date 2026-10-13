@@ -16,6 +16,7 @@
 <p align="center">
   <a href="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml"><img src="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://registry.modelcontextprotocol.io/v0.1/servers?search=com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/MCP_Registry-com.pexafy%2Fpexafy--mcp-8b5cf6" alt="Official MCP Registry"></a>
+  <a href="https://github.com/mcp/com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/GitHub_MCP_Registry-Pexafy-24292f?logo=github&logoColor=white" alt="GitHub MCP Registry"></a>
   <a href="https://smithery.ai/servers/pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/Smithery-pexafy%2Fpexafy--mcp-ea580c" alt="Smithery"></a>
   <a href="https://github.com/Pexafy/pexafy-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT licence"></a>
 </p>
@@ -61,6 +62,7 @@ The assistant carries on with them: the article with its photos in place, the sl
 | Where | How |
 |---|---|
 | **VS Code** | [Install in VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=pexafy&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.pexafy.com%2Fmcp%22%7D), or `code --add-mcp '{"name":"pexafy","type":"http","url":"https://mcp.pexafy.com/mcp"}'` |
+| **GitHub MCP Registry** | [Pexafy's page in the registry](https://github.com/mcp/com.pexafy/pexafy-mcp), with its install buttons |
 | **ChatGPT** | [Add Pexafy](https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy) from ChatGPT's plugin directory |
 | **Claude** | *Customize → Connectors → Add custom connector*, then `https://mcp.pexafy.com/mcp` |
 | **Claude Code** | `claude mcp add --transport http pexafy https://mcp.pexafy.com/mcp` |
