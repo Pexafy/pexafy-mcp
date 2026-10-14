@@ -56,6 +56,10 @@ and from jsDelivr). Review the diff and commit the refreshed `assets/`.
 - The version is written in `pyproject.toml`, `src/pexafy_mcp/__init__.py` and
   `server.json`, and `CHANGELOG.md` needs an entry for it; `tests/test_version.py`
   checks all four agree.
+- The three plugins carry the same version in their manifests:
+  `plugin/.claude-plugin/plugin.json`, `cursor/.cursor-plugin/plugin.json` and
+  `agent-plugin/plugin.json`. Their tests fail when one is left behind, and the skill
+  each one copies from `skills/` must stay identical to it.
 - Every environment variable the server reads is documented in `.env.example`, with its
   default.
 - Never commit secrets. `.env` is git-ignored; use `.env.example` for documentation.
