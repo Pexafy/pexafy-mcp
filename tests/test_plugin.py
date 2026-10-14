@@ -89,7 +89,7 @@ def test_the_manifest_carries_what_the_directory_reads():
     # Permanent once listed: people install the plugin and refer to it by this name.
     assert manifest["name"] == "pexafy"
     assert NAME.fullmatch(manifest["name"])
-    assert manifest["displayName"] == "Pexafy"
+    assert manifest["displayName"] == "Pexafy Stock Photos"
     assert manifest["description"].strip()
     assert manifest["author"] == {
         "name": "Pexafy", "email": "support@pexafy.com", "url": "https://pexafy.com"}

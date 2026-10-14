@@ -1,19 +1,19 @@
-# Pexafy for Claude
+# Pexafy Stock Photos for Claude
 
-Find free stock photographs without leaving the conversation. Describe the scene you need, in any language, or give a link to an image you want free alternatives to, and Claude searches Pexafy's own index of free-licence photographs, collected from Unsplash, Pexels, Pixabay and other libraries. Each photograph comes with the credit line to display, a link to the image and its page at the source.
+Find free stock photos without leaving the conversation. Say what you need, in your own words and in any language, or give a link to an image you want free alternatives to: Claude writes the search, and Pexafy finds the photographs in its own index of free-licence photos, collected from Unsplash, Pexels, Pixabay and other libraries. Each photograph comes with the credit line to display, a link to the image and its page at the source.
 
 Where Claude shows interactive apps in the conversation, the results appear as a grid: narrow it to landscape, portrait or square, like the photographs you want with the heart, and press ≈ on one to see similar photographs. Claude can then read the photographs you liked and work with exactly those.
 
 ## What the plugin contains
 
-- **The Pexafy connector**: the remote MCP server at https://mcp.pexafy.com/mcp, declared in `.mcp.json`. It is the same server as the Pexafy connector in Claude's directory, so if you have both you see one set of tools. All of its tools are read-only: they search Pexafy's photo index, return a chosen photograph as an image file, read the photographs you liked in the grid and, where account linking is offered, report whether a Pexafy account is connected.
+- **The Pexafy Stock Photos connector**: the remote MCP server at https://mcp.pexafy.com/mcp, declared in `.mcp.json`. It is the same server as the Pexafy Stock Photos connector in Claude's directory, so if you have both you see one set of tools. All of its tools are read-only: they search Pexafy's photo index, return a chosen photograph as an image file, read the photographs you liked in the grid and, where account linking is offered, report whether a Pexafy account is connected.
 - **One skill**, `find-stock-photos`, which tells Claude which Pexafy tool fits a request and how to present what comes back.
 
 There are no hooks, scripts or local servers: the plugin installs and runs nothing on your computer.
 
 ## Set it up
 
-1. Connect Pexafy. On claude.ai, in the desktop app or in Cowork, open the plugin's **Connectors** tab and connect it. In Claude Code, run `/mcp`: if the Pexafy server is marked as needing authentication, select it and follow the sign-in steps in your browser. Otherwise Claude Code is already using Pexafy without an account, on a small daily allowance.
+1. Connect Pexafy Stock Photos. On claude.ai, in the desktop app or in Cowork, open the plugin's **Connectors** tab and connect it. In Claude Code, run `/mcp`: if the Pexafy server is marked as needing authentication, select it and follow the sign-in steps in your browser. Otherwise Claude Code is already using Pexafy without an account, on a small daily allowance.
 2. Sign in to Pexafy and approve the single read permission. The connection uses one of your account's API keys; a free account includes one key and 5,000 searches a month, with no card required.
 
 ## Examples

@@ -174,7 +174,7 @@ HTTP_MIDDLEWARE = [Middleware(unauthorized.UnauthorizedHint)]
 # Human-facing name, shown by directories that read the server card. `mcp.name`
 # beside it is the protocol identifier ("pexafy"). tests/test_server_card.py pins this
 # to the `title` in server.json, which is what the MCP registry publishes.
-SERVER_TITLE = "Pexafy"
+SERVER_TITLE = "Pexafy Stock Photos"
 
 # The origin the inline grid is attributed to. Nothing is served from it: ChatGPT
 # renders the widget under `<widgetDomain>.web-sandbox.oaiusercontent.com`, so the
@@ -1611,7 +1611,7 @@ def build_server() -> FastMCP:
             authorization_servers=[OAUTH_AS_URL],
             base_url=MCP_PUBLIC_URL,
             scopes_supported=["read"],
-            resource_name="Pexafy MCP",
+            resource_name="Pexafy Stock Photos",
         )
         if OAUTH_ENABLED
         else None

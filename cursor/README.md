@@ -1,4 +1,4 @@
-# Pexafy for Cursor
+# Pexafy Stock Photos for Cursor
 
 Find real, free-to-use photographs without leaving Cursor. Say what you need, in your own words, for the landing page, README, mock-up or blog post you are working on, or give a link to an image you want free alternatives to: the agent writes the search, and Pexafy matches the scene in its own index of free-licence photographs, collected from Unsplash, Pexels, Pixabay and other libraries. Each photograph comes with the credit line to display, a link to the image and its page at the source.
 

@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://pexafy.com/mcp/">
-    <img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/readme-hero.png" width="100%" alt="Pexafy MCP server. Real photos, right in the chat: a grid of free-to-use photographs with their credits, and one opened large with buttons to like it, find more like it or download it.">
+    <img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/readme-hero.png" width="100%" alt="Pexafy Stock Photos MCP server. Real photos, right in the chat: a grid of free-to-use photographs with their credits, and one opened large with buttons to like it, find more like it or download it.">
   </a>
 </p>
 
