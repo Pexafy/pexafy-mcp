@@ -39,6 +39,13 @@ What is allowed, on purpose:
     "Omit this parameter unless…"): that is how the tool is used, not how the model
     behaves.
   - "When NOT to use Pexafy": a heading that narrows the server's use.
+  - where the grid is shown, Claude aside, the paragraph each search's description opens
+    on (tooling.grid_answer_paragraph): that the grid is the complete visual answer and
+    what the reply after it is. Asked, ChatGPT said it took Pexafy for a source of results
+    and added a gallery of its own; with the paragraph first, five searches added no
+    picture below the grid against 12 to 21 (2026-10-15). It names no other tool, and it is
+    read here on the surface such a host gets; Claude's surface never carries it
+    (tests/test_grid_answer_first.py).
 """
 from __future__ import annotations
 
@@ -93,6 +100,8 @@ FORBIDDEN: dict[str, str] = {
     r"(?i)ask them to tap the heart": "what to ask the person",
     r"(?i)do not list them again": "how to write the answer",
     r"(?i)say what you found": "how to write the answer",
+    r"(?i)do not list, describe, link or show": "how to write the answer (the grid's summary, 2026-10-13)",
+    r"(?i)answer in one or two sentences": "how to write the answer (the grid's summary, 2026-10-13)",
     r"(?i)give them this link": "a link handed to the model to pass on",
     # The server speaking as the assistant.
     r"\bI can't\b": "the server speaking as the assistant",
@@ -124,13 +133,16 @@ def _strings(node, path: str = ""):
 
 
 async def _surface(monkeypatch, *, selection_tool: bool = True, account_linking: bool = True,
-                   grid: bool = True):
+                   grid: bool = True, client_name: str = "mcp"):
     """What `initialize`, `tools/list`, `prompts/list` and `resources/list` send, with
-    the grid on (production) or off, as (where, text) pairs."""
+    the grid on (production) or off, to a client of that name, as (where, text) pairs."""
+    from mcp.types import Implementation
+
     monkeypatch.setattr(previews, "PREVIEWS_AVAILABLE", grid)
     monkeypatch.setattr(selection, "TOOL_ENABLED", selection_tool)
     monkeypatch.setattr(linking, "ENABLED", account_linking)
-    async with Client(server.build_server()) as client:
+    async with Client(server.build_server(),
+                      client_info=Implementation(name=client_name, version="1")) as client:
         found = [("instructions", client.initialize_result.instructions or "")]
         for kind, items in (("tool", await client.list_tools()),
                             ("prompt", await client.list_prompts()),
@@ -215,6 +227,11 @@ async def _runtime_messages(monkeypatch) -> list[tuple[str, str]]:
             await guards.GuardPhotoId().on_call_tool(context, call_next)
         out.append((f"guards ({tool})", str(refused.value)))
 
+    # What the model reads of a search answer drawn as the grid.
+    for photos in ([{"photo_id": "p1", "alt_description": "A red fox"}],
+                   [{"photo_id": "p1"}, {"photo_id": "p2", "alt_description": "Snow"}]):
+        out.append(("previews.grid_summary", previews.grid_summary({"data": photos}, "a fox")))
+
     # The tools' own errors.
     for name in ("_IMG_BAD_URL", "_IMG_UNREACHABLE", "_IMG_NOT_AN_IMAGE", "_IMG_B64_FORMAT"):
         out.append((f"server.{name}", getattr(server, name)))
@@ -264,6 +281,9 @@ async def test_no_served_text_carries_a_refused_formula(monkeypatch):
     texts = await _surface(monkeypatch)
     texts += await _surface(monkeypatch, selection_tool=False, account_linking=False)
     texts += await _surface(monkeypatch, grid=False)
+    # …and the surface a host that shows the grid gets, which opens each search on the
+    # grid (previews.GridAnswerFirst).
+    texts += await _surface(monkeypatch, client_name="openai-mcp")
     texts += await _runtime_messages(monkeypatch)
     texts += _widget_texts()
     texts.append(("SKILL.md", SKILL.read_text(encoding="utf-8")))
@@ -292,6 +312,8 @@ def test_the_check_catches_what_it_is_meant_to():
         "never say it is unavailable to you",
         "Call it BEFORE saying you cannot see",
         "so do not list them again in text. Say what you found and what you would use.",
+        "The grid is the answer: do not list, describe, link or show them again in your reply; "
+        "answer in one or two sentences and let the person choose in the grid.",
         "an attached image, an image URL",
     ]
     for sentence in caught:
@@ -304,6 +326,8 @@ def test_the_check_catches_what_it_is_meant_to():
         "Find photos for you",  # "for you" is not "or you"
         "An image that is only attached to the conversation cannot be passed on",
         "Free, stock, royalty-free, commercially usable or documentary photographs.",
+        "The reply needs no picture or link of its own: a picture added below the grid would "
+        "be a second, different set.",
     ]
     for sentence in allowed:
         assert not _violations("sample", sentence), sentence

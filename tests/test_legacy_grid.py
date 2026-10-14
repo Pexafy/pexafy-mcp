@@ -263,20 +263,26 @@ async def test_the_0_4_12_grid_draws_the_answer_in_the_window(grid_on, window_op
 
 # ── After the instant, or for another host, nothing changes ───────────────────
 
-async def test_the_same_host_after_the_deadline_gets_paths_without_address(
+async def test_the_same_host_after_the_deadline_gets_no_address(
         grid_on, window_closed, fake_api):
+    """After the window ChatGPT's answer carries no address at all in the half its model
+    reads: its grid reads the previews whole from `_meta` (2026-10-13; before, they
+    stayed there as a path without address, which the model turned into a picture that
+    could not load), the source page goes, the credit keeps its words without the URL."""
     fake_api.respond = _answer
     result = await _call("openai-mcp", *CALLS[0])
     for photo, sent in zip(_photos(result), API_PHOTOS, strict=True):
-        pid = sent["photo_id"]
-        assert photo["preview_url"].startswith(f"{pid}/480w.jpg?e=")
-        assert photo["preview_url_large"].startswith(f"{pid}/1280w.jpg?s=")
+        assert "preview_url" not in photo and "preview_url_large" not in photo
         for field in compat.LEGACY_GRID_PHOTO_FIELDS:
-            assert field not in photo, field
+            if field == "attribution":
+                assert "http" not in photo["attribution"]["plain"]
+            else:
+                assert field not in photo, field
+        assert set(result.meta[previews.PREVIEW_META_KEY][sent["photo_id"]]) == {"small", "large"}
     assert "cta" not in result.structured_content
     # No image link left in the model's half: neither the CDN's nor the source's.
     half = json.dumps(result.structured_content)
-    assert THUMB_BASE not in half and "images.example" not in half
+    assert THUMB_BASE not in half and "images.example" not in half and "http" not in half
     assert "http" not in result.content[0].text
 
 

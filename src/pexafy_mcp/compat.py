@@ -240,9 +240,11 @@ LEGACY_GRID_ENV = "PEXAFY_LEGACY_GRID_UNTIL"
 # What the 0.4.12 grid reads off a photograph and 1.0.0 takes out: `urls` (the stand-in
 # for a missing preview, and "Open original image", `full` first), the photographer's
 # link and user name, the dominant colour, the date, and the long description of the
-# detail panel. The rest it reads — `photo_id`, `rank`, `preview_url`, `attribution`,
-# `photographer_full_name`, `width`, `height`, `source`, `source_image_url`,
-# `license_type`, `orientation`, `alt_description` — 1.0.0 still sends.
+# detail panel; and, since 2026-10-13, where the grid shows the answer
+# (previews._no_address_for_the_model), the source page and the credit with its licence
+# URL. The rest it reads — `photo_id`, `rank`, `preview_url`, `photographer_full_name`,
+# `width`, `height`, `source`, `license_type`, `orientation`, `alt_description` — 1.0.0
+# still sends, the previews whole from `_meta`.
 LEGACY_GRID_PHOTO_FIELDS = (
     "urls",
     "photographer_url",
@@ -251,6 +253,8 @@ LEGACY_GRID_PHOTO_FIELDS = (
     "color_hex",
     "uploaded_on",
     "description",
+    "source_image_url",
+    "attribution",
 )
 
 
@@ -352,6 +356,9 @@ def set_aside_for_legacy_grid(photo) -> None:
         return
     kept = {name: copy.deepcopy(photo[name]) for name in LEGACY_GRID_PHOTO_FIELDS
             if name in photo}
+    # The credit as 1.0.0 sends it (tooling.prune_photo), licence URL included.
+    if isinstance(kept.get("attribution"), dict):
+        kept["attribution"] = tooling.clean_attribution(kept["attribution"])
     if isinstance(kept.get("description"), str):
         kept["description"] = tooling.clean_free_text(kept["description"])
     if isinstance(kept.get("photographer_username"), str):

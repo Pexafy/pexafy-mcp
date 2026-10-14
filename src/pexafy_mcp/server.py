@@ -174,7 +174,7 @@ HTTP_MIDDLEWARE = [Middleware(unauthorized.UnauthorizedHint)]
 # Human-facing name, shown by directories that read the server card. `mcp.name`
 # beside it is the protocol identifier ("pexafy"). tests/test_server_card.py pins this
 # to the `title` in server.json, which is what the MCP registry publishes.
-SERVER_TITLE = "Pexafy"
+SERVER_TITLE = "Pexafy Stock Photos"
 
 # The origin the inline grid is attributed to. Nothing is served from it: ChatGPT
 # renders the widget under `<widgetDomain>.web-sandbox.oaiusercontent.com`, so the
@@ -1245,6 +1245,8 @@ PHOTO_FILE_DESCRIPTION = (
     "\n"
     "Use it when the user wants a photograph found here as a file: to place it in a document, a slide or a post, to attach, send or download it, or to have it cropped, captioned or otherwise edited with the host's own tools.\n"
     "\n"
+    "It is for a photograph the person picked: where the Pexafy grid is shown, the photographs of a search are already on screen and need no file to be seen.\n"
+    "\n"
     f"The answer contains the photograph, at most {previews.PERMANENT_WIDTH} pixels wide, and a line giving its file name, size, licence, source, `photo_id`, page at the source and the credit line to display. One photo per call; the file stays in the conversation afterwards.\n"
     "\n"
     "This server does not edit images: what can be done to the file next depends on the host's own tools. Its licence and credit line apply to this photograph only."
@@ -1609,7 +1611,7 @@ def build_server() -> FastMCP:
             authorization_servers=[OAUTH_AS_URL],
             base_url=MCP_PUBLIC_URL,
             scopes_supported=["read"],
-            resource_name="Pexafy MCP",
+            resource_name="Pexafy Stock Photos",
         )
         if OAUTH_ENABLED
         else None
@@ -1955,6 +1957,10 @@ def build_server() -> FastMCP:
     # ChatGPT's status lines, whose key names Microsoft Agent Framework refuses along
     # with every tool. Every other host reads the list unchanged. See compat.py.
     mcp.add_middleware(compat.DropToolStatusForStrictClients())
+    # …and a host that shows the grid, Claude aside, reads first in each search's
+    # description that the grid is the complete visual answer. See previews.GridAnswerFirst.
+    if previews.PREVIEWS_AVAILABLE:
+        mcp.add_middleware(previews.GridAnswerFirst())
     # Arguments the API would answer badly are refused here, with a message the caller
     # can act on: a `photo_id` that is not one (a rank), a blank or overlong sentence,
     # an unknown shape. After compat, so they see the current names. See guards.py.
@@ -2006,16 +2012,17 @@ def build_server() -> FastMCP:
                 # What the model reads when the grid loads: the surface the reader is
                 # working in, so it stops re-listing in text what is already on screen.
                 "openai/widgetDescription": (
-                    "A grid of the photographs found, drawn for the reader: thumbnails with no numbers, a "
-                    "heart on each to like it, a shape filter that re-runs the search, and a swipe deck "
-                    "that opens in the grid's own place — one photograph at a time, with who took it and "
-                    "what is in it, and a ≈ button that asks for more like it. The photographs the reader "
+                    "The gallery of the photographs found for this request, drawn for the reader with "
+                    "each photograph's credit and licence: the reply needs no picture or link of its "
+                    "own. Thumbnails carry no numbers; a heart on each likes it, a shape filter re-runs "
+                    "the search, and a swipe deck opens in the grid's own place — one photograph at a "
+                    "time, with who took it and what is in it, and a ≈ button that asks for more like "
+                    "it. The photographs the reader "
                     "liked stay under the grid, numbered #1..#n on screen in the reader's order — the "
                     "order liked, which they can rearrange by dragging: those are "
                     "the numbers the reader sees and names them by (“#2”). "
-                    + (f"They are readable through {tooling.PUBLIC_TOOL_NAMES['get_selected_photos']}. "
-                       if selection_tool else "The grid passes them to you in its context. ")
-                    + "The grid already shows the photographs themselves."
+                    + (f"They are readable through {tooling.PUBLIC_TOOL_NAMES['get_selected_photos']}."
+                       if selection_tool else "The grid passes them to you in its context.")
                 ),
                 "openai/widgetCSP": {
                     "resource_domains": resource_domains,

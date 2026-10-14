@@ -191,20 +191,29 @@ def _reads_the_whole_answer(result: dict) -> None:
             assert photo["urls"] == {"regular": sent["urls"]["regular"]}
             assert photo["preview_url"].startswith(f"{THUMB_BASE}/{pid}/480w.jpg?e=")
             assert photo["preview_url_large"].startswith(f"{THUMB_BASE}/{pid}/1280w.jpg?s=")
+            # …the source page and the credit with its licence URL too (2026-10-13: the
+            # grid's answer lost them, a client without the grid keeps them).
+            assert photo.get("source_image_url") == sent.get("source_image_url")
+            assert photo["attribution"]["plain"] == sent["attribution"]["plain"]
     assert "https://images.example/1/regular.jpg" in text
 
 
-def _reads_the_grid_summary(result: dict) -> None:
+def _reads_the_grid_summary(result: dict, keeps_paths: bool) -> None:
     """What a client that shows the grid reads: the photographs named without a link,
-    and a `structuredContent` with no image address left in it."""
+    and a `structuredContent` with no address left in it — ChatGPT, whose grid reads
+    `_meta` whole, without the previews at all; another host with them as a path."""
     text = result["content"][0]["text"]
-    assert text.startswith("2 photographs for “a red bicycle” are on the person's screen")
+    assert text.startswith("2 photographs for “a red bicycle” are on the person's screen in the Pexafy grid")
     assert "http" not in text
     for photo, sent in zip(result["structuredContent"]["data"], API_PHOTOS, strict=True):
-        assert "urls" not in photo
-        assert photo["preview_url"].startswith(f"{sent['photo_id']}/480w.jpg?e=")
+        assert "urls" not in photo and "source_image_url" not in photo
+        assert "http" not in photo["attribution"]["plain"]
+        if keeps_paths:
+            assert photo["preview_url"].startswith(f"{sent['photo_id']}/480w.jpg?e=")
+        else:
+            assert "preview_url" not in photo and "preview_url_large" not in photo
     half = json.dumps(result["structuredContent"])
-    assert THUMB_BASE not in half and "images.example" not in half
+    assert THUMB_BASE not in half and "images.example" not in half and "http" not in half
 
 
 def test_codex_reads_the_whole_answer_with_its_links(grid_on):
@@ -217,13 +226,13 @@ def test_codex_reads_the_whole_answer_with_its_links(grid_on):
 
 def test_codex_that_declares_mcp_apps_gets_the_grid(grid_on):
     _, result = _as(CODEX, "openai-mcp", apps=True)
-    _reads_the_grid_summary(result)
+    _reads_the_grid_summary(result, keeps_paths=True)
     assert result["_meta"]["pexafy/host"] == {"assistant": "Codex"}
 
 
 def test_chatgpt_is_unchanged(grid_on):
     names, result = _as(CHATGPT, "openai-mcp")
-    _reads_the_grid_summary(result)
+    _reads_the_grid_summary(result, keeps_paths=False)
     assert result["_meta"]["pexafy/host"] == {"assistant": "ChatGPT"}
     assert compat.SIMILAR_TOOL not in names
 

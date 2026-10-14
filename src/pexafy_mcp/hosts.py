@@ -247,6 +247,15 @@ def renders_grid(context: Any = None) -> bool:
     return is_openai(context) or calls_from_anthropic()
 
 
+def grid_reads_meta(context: Any = None) -> bool:
+    """Whether the grid this answer draws reads the result's `_meta` in every case:
+    ChatGPT, which hands it to the frame with the result and keeps a copy for a reloaded
+    frame (`window.openai.toolResponseMetadata`, read by heldMeta in widget.py). There
+    the half the model reads needs no copy of the previews. Codex is not counted, nor
+    any other host: a frame that is not handed `_meta` again draws from that copy."""
+    return is_openai(context) and not is_codex(context)
+
+
 # The assistant a person talks to in each host that shows the grid: whom the grid names
 # when it says where the photos they like go. In VS Code that is GitHub Copilot.
 ASSISTANT_NAMES = (

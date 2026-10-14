@@ -88,7 +88,7 @@ def test_the_manifest_matches_the_marketplace_entry():
     (entry,) = _marketplace()["plugins"]
     assert manifest["name"] == entry["name"] == "pexafy"
     assert NAME.fullmatch(manifest["name"])
-    assert manifest["displayName"] == "Pexafy"
+    assert manifest["displayName"] == "Pexafy Stock Photos"
     assert manifest["description"].strip()
     # Cursor's schema allows a name and an e-mail address in `author`, nothing else.
     assert manifest["author"] == {"name": "Pexafy", "email": "support@pexafy.com"}

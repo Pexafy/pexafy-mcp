@@ -1,7 +1,7 @@
 {
   "name": "pexafy",
-  "displayName": "Pexafy",
-  "version": "1.0.1",
+  "displayName": "Pexafy Stock Photos",
+  "version": "1.0.2",
   "minClientVersions": {
     "cursor": "3.13.0"
   },

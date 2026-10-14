@@ -11,6 +11,6 @@ dependencies:
   tools:
     - type: "mcp"
       value: "pexafy"
-      description: "Pexafy free stock photo search"
+      description: "Pexafy Stock Photos: free stock photo search"
       transport: "streamable_http"
       url: "https://mcp.pexafy.com/mcp"
