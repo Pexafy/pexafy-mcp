@@ -252,7 +252,45 @@ class SplitPreviews(Middleware):
             for photo in (structured.get("data") or []) if isinstance(structured, dict) else []:
                 if isinstance(photo, dict):
                     _no_address_for_the_model(photo, whole_meta)
+            # ChatGPT's own suggestion, asked why it added a gallery of its own under the
+            # grid: say in the data how the answer is shown (tooling.ADD_RESULT_FIELDS).
+            if whole_meta and isinstance(structured, dict) and structured.get("data"):
+                structured[PRESENTATION_KEY] = presentation()
         return result
+
+
+# The answer's own word on how it is shown, where ChatGPT draws it (SplitPreviews).
+PRESENTATION_KEY = "presentation"
+
+
+def presentation() -> dict:
+    """How an answer drawn as the grid is shown: the grid is on screen, the reply needs no
+    picture or link, and what the person does next is in the grid."""
+    return {
+        "mode": "grid",
+        "grid_already_rendered": True,
+        "show_inline_images": False,
+        "show_photo_links": False,
+        "next_step": ("The person likes the photographs they want in the grid; "
+                      f"{tooling.PUBLIC_TOOL_NAMES['get_selected_photos']} returns them."),
+    }
+
+
+class GridAnswerFirst(Middleware):
+    """List both searches with tooling.grid_answer_paragraph first in their description,
+    to a host that shows the grid and is not Claude. Every other client — Claude, Claude
+    Code, Codex, a terminal, an unknown one — gets the list unchanged."""
+
+    SEARCHES = (tooling.PUBLIC_TOOL_NAMES["search_photos"],
+                tooling.PUBLIC_TOOL_NAMES["search_photos_by_image"])
+
+    async def on_list_tools(self, context: MiddlewareContext, call_next):
+        tools = await call_next(context)
+        if not hosts.renders_grid(context) or hosts.is_claude(context):
+            return tools
+        first = tooling.grid_answer_paragraph() + "\n\n"
+        return [tool.model_copy(update={"description": first + (tool.description or "")})
+                if tool.name in self.SEARCHES else tool for tool in tools]
 
 
 # The `_meta` key that says which assistant the person talks to (hosts.assistant_name).

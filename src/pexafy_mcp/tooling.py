@@ -183,6 +183,27 @@ def _tool_descriptions(file_tool: bool = True, grid: bool = True) -> dict[tuple[
     }
 
 
+def grid_answer_paragraph() -> str:
+    """What a host that shows the grid reads first in each search's description
+    (previews.GridAnswerFirst): that the grid is the complete visual answer, and what the
+    reply after it is. Asked, ChatGPT said it had taken Pexafy for a source of results
+    rather than for the answer on screen, and had added a gallery of its own; with this
+    paragraph first, five searches added no picture below the grid, against 12 to 21 with
+    the same words at the end or in the result (measured in ChatGPT, 2026-10-15). Not for
+    Claude, whose directory asks a description not to tell Claude how to behave; not for a
+    host without the grid, where there is no grid to point to."""
+    return (
+        "Pexafy Stock Photos is a full photo search: it finds the photographs, shows them in the "
+        "Pexafy grid and hands over the ones the person picks. Where the grid is shown, it is the "
+        "complete visual answer to the request: every photograph found, with its credit and "
+        "licence, to open large, like, explore similar ones with ≈ and filter by shape. After it "
+        "answers, the reply is two or three sentences: the photographs are in the grid above, the "
+        "person likes the ones they want there, and you then work with those through "
+        f"{PUBLIC_TOOL_NAMES['get_selected_photos']}. The reply adds no second gallery: no inline "
+        "images and no photo links."
+    )
+
+
 def _param_overrides() -> dict[str, dict]:
     """Per-parameter overrides, applied on every kept operation that has the parameter.
 
@@ -568,6 +589,22 @@ ADD_RESULT_FIELDS = {
             "message": {"type": "string", "description": "The whole notice in words, for a host with no UI."},
         },
     },
+    # How the answer is shown, where ChatGPT draws it as the grid (previews.SplitPreviews):
+    # the grid is the answer on screen, and what the person does next is there.
+    "presentation": {
+        "type": "object",
+        "description": (
+            "Present only where the answer is drawn as the Pexafy grid: how it is shown. "
+            "The grid is the complete visual answer; the reply needs no picture or link."
+        ),
+        "properties": {
+            "mode": {"type": "string", "enum": ["grid"], "description": "The answer is drawn as the Pexafy grid."},
+            "grid_already_rendered": {"type": "boolean", "description": "The grid is on the person's screen."},
+            "show_inline_images": {"type": "boolean", "description": "Whether the reply needs pictures of its own: no, the grid shows them."},
+            "show_photo_links": {"type": "boolean", "description": "Whether the reply needs photo links: no, each photograph opens from the grid."},
+            "next_step": {"type": "string", "description": "What the person does next in the grid."},
+        },
+    },
     # The words that go with an empty grid. Present only on a refusal, and the reason
     # a refusal is a result at all rather than a tool error: an error renders no
     # widget, so the wall would have had nowhere to appear.
@@ -579,6 +616,9 @@ ADD_RESULT_FIELDS = {
         ),
     },
 }
+
+# The ones only an answer drawn as the grid carries (previews.SplitPreviews).
+GRID_ONLY_RESULT_FIELDS = frozenset({"presentation"})
 
 # Fields this client adds to every photo after the API has answered (see
 # server._enrich_response). They are in the payload a model reads, so they belong in
@@ -708,7 +748,9 @@ def prune_output_schema(schema: dict | None, *, grid: bool = True) -> dict | Non
     if isinstance(properties, dict):
         for name in REMOVE_RESULT_FIELDS:
             properties.pop(name, None)
-        properties.update(ADD_RESULT_FIELDS)
+        # `presentation` describes the grid: without one, it is neither sent nor declared.
+        properties.update({name: field for name, field in ADD_RESULT_FIELDS.items()
+                           if grid or name not in GRID_ONLY_RESULT_FIELDS})
     for error in _error_objects(schema):
         for name in REMOVE_ERROR_FIELDS:
             error["properties"].pop(name, None)

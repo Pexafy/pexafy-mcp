@@ -39,6 +39,13 @@ What is allowed, on purpose:
     "Omit this parameter unless…"): that is how the tool is used, not how the model
     behaves.
   - "When NOT to use Pexafy": a heading that narrows the server's use.
+  - where the grid is shown, Claude aside, the paragraph each search's description opens
+    on (tooling.grid_answer_paragraph): that the grid is the complete visual answer and
+    what the reply after it is. Asked, ChatGPT said it took Pexafy for a source of results
+    and added a gallery of its own; with the paragraph first, five searches added no
+    picture below the grid against 12 to 21 (2026-10-15). It names no other tool, and it is
+    read here on the surface such a host gets; Claude's surface never carries it
+    (tests/test_grid_answer_first.py).
 """
 from __future__ import annotations
 
@@ -126,13 +133,16 @@ def _strings(node, path: str = ""):
 
 
 async def _surface(monkeypatch, *, selection_tool: bool = True, account_linking: bool = True,
-                   grid: bool = True):
+                   grid: bool = True, client_name: str = "mcp"):
     """What `initialize`, `tools/list`, `prompts/list` and `resources/list` send, with
-    the grid on (production) or off, as (where, text) pairs."""
+    the grid on (production) or off, to a client of that name, as (where, text) pairs."""
+    from mcp.types import Implementation
+
     monkeypatch.setattr(previews, "PREVIEWS_AVAILABLE", grid)
     monkeypatch.setattr(selection, "TOOL_ENABLED", selection_tool)
     monkeypatch.setattr(linking, "ENABLED", account_linking)
-    async with Client(server.build_server()) as client:
+    async with Client(server.build_server(),
+                      client_info=Implementation(name=client_name, version="1")) as client:
         found = [("instructions", client.initialize_result.instructions or "")]
         for kind, items in (("tool", await client.list_tools()),
                             ("prompt", await client.list_prompts()),
@@ -271,6 +281,9 @@ async def test_no_served_text_carries_a_refused_formula(monkeypatch):
     texts = await _surface(monkeypatch)
     texts += await _surface(monkeypatch, selection_tool=False, account_linking=False)
     texts += await _surface(monkeypatch, grid=False)
+    # …and the surface a host that shows the grid gets, which opens each search on the
+    # grid (previews.GridAnswerFirst).
+    texts += await _surface(monkeypatch, client_name="openai-mcp")
     texts += await _runtime_messages(monkeypatch)
     texts += _widget_texts()
     texts.append(("SKILL.md", SKILL.read_text(encoding="utf-8")))

@@ -6,6 +6,20 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **Where the grid is shown, each search's description opens on it.** Asked why, after
+  the Pexafy grid, it added pictures of its own and links to stock sites, ChatGPT said it
+  took Pexafy for a source of results rather than for the answer on screen. In a host
+  that shows the grid and is not Claude, `search_photos` and `search_photos_by_image` now
+  open on one paragraph: Pexafy Stock Photos is a full photo search, the grid is the
+  complete visual answer, and the reply after it is two or three sentences that invite
+  the person to like what they want, with no second gallery. Measured in ChatGPT on five
+  searches: no picture added below the grid, against 12 to 21 before, and every reply
+  invites the person to like photographs. Claude, whose directory asks a description
+  not to tell Claude how to behave, and every host without the grid read the list as
+  before. ChatGPT's answers also say, in a declared `presentation` field, how they are
+  shown, and the file tool's description says it is for a photograph the person picked.
+
 ### Fixed
 - **ChatGPT no longer writes the photographs again under the grid.** In a host that
   shows the grid, the model read a list of the photographs with their credits, a mild

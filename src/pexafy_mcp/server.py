@@ -1245,6 +1245,8 @@ PHOTO_FILE_DESCRIPTION = (
     "\n"
     "Use it when the user wants a photograph found here as a file: to place it in a document, a slide or a post, to attach, send or download it, or to have it cropped, captioned or otherwise edited with the host's own tools.\n"
     "\n"
+    "It is for a photograph the person picked: where the Pexafy grid is shown, the photographs of a search are already on screen and need no file to be seen.\n"
+    "\n"
     f"The answer contains the photograph, at most {previews.PERMANENT_WIDTH} pixels wide, and a line giving its file name, size, licence, source, `photo_id`, page at the source and the credit line to display. One photo per call; the file stays in the conversation afterwards.\n"
     "\n"
     "This server does not edit images: what can be done to the file next depends on the host's own tools. Its licence and credit line apply to this photograph only."
@@ -1955,6 +1957,10 @@ def build_server() -> FastMCP:
     # ChatGPT's status lines, whose key names Microsoft Agent Framework refuses along
     # with every tool. Every other host reads the list unchanged. See compat.py.
     mcp.add_middleware(compat.DropToolStatusForStrictClients())
+    # …and a host that shows the grid, Claude aside, reads first in each search's
+    # description that the grid is the complete visual answer. See previews.GridAnswerFirst.
+    if previews.PREVIEWS_AVAILABLE:
+        mcp.add_middleware(previews.GridAnswerFirst())
     # Arguments the API would answer badly are refused here, with a message the caller
     # can act on: a `photo_id` that is not one (a rank), a blank or overlong sentence,
     # an unknown shape. After compat, so they see the current names. See guards.py.
