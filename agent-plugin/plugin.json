@@ -1,0 +1,23 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "pexafy",
+  "version": "1.0.2",
+  "description": "Say what you need and the agent finds free-to-use photos: choose them together in a grid, or let it place them in your files, each with its credit line.",
+  "author": {
+    "name": "Pexafy",
+    "email": "support@pexafy.com",
+    "url": "https://pexafy.com"
+  },
+  "homepage": "https://pexafy.com/mcp/",
+  "repository": "https://github.com/Pexafy/pexafy-mcp",
+  "license": "MIT",
+  "keywords": [
+    "pexafy",
+    "photos",
+    "stock-photos",
+    "free-photos",
+    "images",
+    "image-search",
+    "mcp"
+  ]
+}

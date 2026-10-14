@@ -6,6 +6,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **The plugin in the Agent Plugins format, in `agent-plugin/`.** `plugin.json` at the
+  plugin root, the server in `mcp.json` (`streamable-http`), and the `find-stock-photos`
+  skill copied from `skills/`. It is the format GitHub Copilot's public plugin index
+  accepts, and the one Copilot, Codex and Qwen Code read as it is. Same server, same
+  skill and same version as the Claude and Cursor plugins; `tests/test_agent_plugin.py`
+  keeps the copy, the version and the server URL in step.
+
 ## [1.0.2] — 2026-10-14
 
 ### Changed
