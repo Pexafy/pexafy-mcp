@@ -1,7 +1,7 @@
 {
   "name": "pexafy",
   "displayName": "Pexafy Stock Photos",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Say what you need and Claude finds free stock photos: pick them together in a grid, or let Claude place them in your work, each with its licence and credit line. Uses the Pexafy Stock Photos connector.",
   "author": {
     "name": "Pexafy",

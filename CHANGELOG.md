@@ -6,19 +6,31 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.2] — 2026-10-14
+
 ### Changed
+- **The name shown is Pexafy Stock Photos.** The `title` of the registry entry and of
+  the server card, the `displayName` of the Claude and Cursor plugins, the Cursor
+  marketplace entry, the plugins' READMEs and the name the OAuth metadata gives the
+  protected resource now read "Pexafy Stock Photos", a name that says what the server
+  finds. Identifiers do not change: the registry name `com.pexafy/pexafy-mcp`, the
+  plugins' `name` `pexafy`, the `pexafy` key of their `.mcp.json` (the prefix of the
+  tool names in Claude Code), `serverInfo.name` and the grid's app name. The Claude
+  plugin's description and README now say it as the repository's README does: the person
+  says what they need, and the assistant writes the search.
 - **Where the grid is shown, each search's description opens on it.** Asked why, after
-  the Pexafy grid, it added pictures of its own and links to stock sites, ChatGPT said it
-  took Pexafy for a source of results rather than for the answer on screen. In a host
-  that shows the grid and is not Claude, `search_photos` and `search_photos_by_image` now
-  open on one paragraph: Pexafy Stock Photos is a full photo search, the grid is the
+  the Pexafy grid, it added pictures of its own and links to stock sites, ChatGPT said
+  it took Pexafy for a source of results rather than for the answer on screen. In a host
+  that shows the grid and is not Claude, `search_photos` and `search_photos_by_image`
+  now open on one paragraph: Pexafy Stock Photos is a full photo search, the grid is the
   complete visual answer, and the reply after it is two or three sentences that invite
-  the person to like what they want, with no second gallery. Measured in ChatGPT on five
-  searches: no picture added below the grid, against 12 to 21 before, and every reply
-  invites the person to like photographs. Claude, whose directory asks a description
-  not to tell Claude how to behave, and every host without the grid read the list as
-  before. ChatGPT's answers also say, in a declared `presentation` field, how they are
-  shown, and the file tool's description says it is for a photograph the person picked.
+  the person to like what they want, with no second gallery. Measured in ChatGPT on ten
+  searches: three pictures added below the grid, in one reply, against 12 to 21 in five
+  searches before, and nine replies in ten invite the person to like photographs in the
+  grid. Claude, whose directory asks a description not to tell Claude how to behave, and
+  every host without the grid read the list as before. ChatGPT's answers also say, in a
+  declared `presentation` field, how they are shown, and the file tool's description
+  says it is for a photograph the person picked.
 
 ### Fixed
 - **ChatGPT no longer writes the photographs again under the grid.** In a host that
@@ -42,6 +54,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   drop the constraint. Each field is now `anyOf: [{type: X}, {type: "null"}]`, which
   accepts the same values, and a test keeps every input and output schema free of
   `type` lists.
+- **A client named "mcp" loads the tools.** Microsoft Agent Framework (Python 1.20 and
+  1.21) checks every `_meta` key of every listed tool against the MCP key-name format
+  and, on the first that fails, loads no tool at all: "Invalid MCP _meta key name:
+  'openai/toolInvocation/invoking'". A client named "mcp", the Python SDK's default
+  `clientInfo.name` that Microsoft Agent Framework, Agno, Pydantic AI and Strands keep,
+  no longer reads ChatGPT's two status-line keys; none of them shows a status line.
+  Every other host reads the same list as before.
 
 ## [1.0.1] — 2026-10-07
 
