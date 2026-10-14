@@ -16,6 +16,7 @@
 <p align="center">
   <a href="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml"><img src="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://registry.modelcontextprotocol.io/v0.1/servers?search=com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/MCP_Registry-com.pexafy%2Fpexafy--mcp-8b5cf6" alt="Official MCP Registry"></a>
+  <a href="https://smithery.ai/servers/pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/Smithery-pexafy%2Fpexafy--mcp-ea580c" alt="Smithery"></a>
   <a href="https://github.com/Pexafy/pexafy-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT licence"></a>
 </p>
 
