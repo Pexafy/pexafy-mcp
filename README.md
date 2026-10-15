@@ -71,10 +71,13 @@ The assistant carries on with them: the article with its photos in place, the sl
 | **ChatGPT** | [Add Pexafy](https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy) from ChatGPT's plugin directory |
 | **Claude** | *Customize → Connectors → Add custom connector*, then `https://mcp.pexafy.com/mcp` |
 | **Claude Code** | `claude mcp add --transport http pexafy https://mcp.pexafy.com/mcp` |
+| **Codex** | `codex mcp add pexafy --url https://mcp.pexafy.com/mcp` |
+| **GitHub Copilot CLI** | `copilot mcp add --transport http pexafy https://mcp.pexafy.com/mcp` |
 | **Cursor** | [Add to Cursor](https://cursor.com/en/install-mcp?name=pexafy&config=eyJ1cmwiOiJodHRwczovL21jcC5wZXhhZnkuY29tL21jcCJ9) |
+| **Goose, Kiro, Gemini CLI, OpenCode, Cline, Zed…** | One click or one command each, on [pexafy.com/mcp](https://pexafy.com/mcp/#setup) |
 | **Any MCP client** | Streamable HTTP at `https://mcp.pexafy.com/mcp` |
 
-**Nothing to install, no API key to paste.** In VS Code, Cursor and other editors you can search right away, without an account. ChatGPT and Claude ask you to sign in to Pexafy once; a free account is enough.
+**Zero friction: nothing to install, no API key.** Most clients search right away, without an account. When you want your own account, ask the assistant to *connect my Pexafy account*: it opens Pexafy's sign-in page in your browser (OAuth), and nothing is pasted anywhere. ChatGPT and Claude ask you to sign in once; a free account is enough.
 
 ## Five tools, all read-only
 
@@ -100,4 +103,4 @@ Pexafy searches **its own index** of millions of free-to-use photographs, collec
   <a href="https://github.com/Pexafy/pexafy-mcp/blob/main/LICENSE">MIT licence</a>
 </p>
 
-<p align="center"><sub>ChatGPT, Claude, Cursor and Visual Studio Code are trademarks of their respective owners.</sub></p>
+<p align="center"><sub>ChatGPT, Claude, Codex, Cursor, GitHub Copilot and Visual Studio Code are trademarks of their respective owners.</sub></p>

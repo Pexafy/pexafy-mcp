@@ -12,8 +12,10 @@ A hosted server runs at:
 https://mcp.pexafy.com/mcp
 ```
 
-It speaks Streamable HTTP and authenticates with **OAuth 2.1** — you sign in to
-Pexafy in a browser window and the connector receives its own credentials. There is
+It speaks Streamable HTTP and works right away, **without an account**, on a daily
+allowance. To use your own Pexafy account, connect it with **OAuth 2.1**: ask the
+assistant to *connect my Pexafy account*, or use your client's sign-in, and you sign in
+to Pexafy in a browser window while the connector receives its own credentials. There is
 no API key to generate, paste into a JSON file, or rotate later.
 
 ### Claude (web and desktop)
@@ -33,10 +35,13 @@ claude mcp add --transport http pexafy https://mcp.pexafy.com/mcp
 
 ### Any other MCP client
 
-Point it at the same URL with the `streamable-http` transport. Clients that don't
-implement OAuth can authenticate instead with a Pexafy API key sent as
-`Authorization: Bearer <key>` or `x-api-key: <key>` — get one from the
-[dashboard](https://pexafy.com/dashboard/api-keys/).
+Point it at the same URL with the `streamable-http` transport: it works without an
+account. When you want your own account, ask the assistant to *connect my Pexafy
+account*; clients that implement MCP authorization open Pexafy's sign-in page. The
+one-click links and the command for each client (Codex, GitHub Copilot CLI, Gemini CLI,
+OpenCode, Goose, Kiro, Cline, Zed…) are on [pexafy.com/mcp](https://pexafy.com/mcp/#setup).
+A client with no sign-in at all can still use an account through an API key: see
+[Accounts and allowances](#accounts-and-allowances).
 
 Liveness: [`GET /health`](https://mcp.pexafy.com/health) (public, no auth).
 
@@ -47,8 +52,8 @@ gateway URL is available for clients that prefer it.
 
 ### What it costs
 
-The Free plan covers 5,000 searches a month with one connector — enough for regular
-use, no card required. Higher tiers are on the [pricing page](https://pexafy.com/pricing/).
+Without an account, a small daily allowance. The Free plan is enough for regular use,
+no card required. Higher tiers are on the [pricing page](https://pexafy.com/pricing/).
 Close to the end of an allowance the grid shows how many searches are left; at the end,
 the assistant says so in the chat — the limit and when it resets — instead of failing
 with an opaque error.
