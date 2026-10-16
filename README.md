@@ -5,10 +5,13 @@
 </p>
 
 <p align="center">
-  <a href="https://insiders.vscode.dev/redirect/mcp/install?name=pexafy&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.pexafy.com%2Fmcp%22%7D"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-vscode.png" height="46" alt="Install in VS Code"></a>
+  <a href="https://vscode.dev/redirect?url=vscode%3Amcp%2Fby-name%2Fcom.pexafy%2Fpexafy-mcp"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-vscode.png" height="46" alt="Install in VS Code"></a>
+  <a href="https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Fby-name%2Fcom.pexafy%2Fpexafy-mcp"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-vscode-insiders.png" height="46" alt="Install in VS Code Insiders"></a>
+  <a href="https://github.com/copilot/app/launch?open=ghapp%3A%2F%2Fmcp%2Finstall%3F%257B%2522name%2522%253A%2522pexafy%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fmcp.pexafy.com%252Fmcp%2522%257D&entry_point=dotcom_mcp-registry_install"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-copilot-app.png" height="46" alt="Install in GitHub Copilot app"></a>
   <a href="https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-chatgpt.png" height="46" alt="Add to ChatGPT"></a>
   <a href="https://cursor.com/en/install-mcp?name=pexafy&config=eyJ1cmwiOiJodHRwczovL21jcC5wZXhhZnkuY29tL21jcCJ9"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-cursor.png" height="46" alt="Add to Cursor"></a>
   <a href="https://pexafy.com/mcp/#setup"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-claude.png" height="46" alt="Connect Claude"></a>
+  <a href="https://github.com/mcp/com.pexafy/pexafy-mcp"><img src="https://raw.githubusercontent.com/Pexafy/pexafy-mcp/main/docs/assets/badge-github-registry.png" height="46" alt="View in GitHub MCP Registry"></a>
 </p>
 
 <h3 align="center">Ask for a photo the way you would describe it to a person.<br>Get real, free-to-use photographs back, inside the conversation, credits included.</h3>
@@ -16,6 +19,7 @@
 <p align="center">
   <a href="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml"><img src="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://registry.modelcontextprotocol.io/v0.1/servers?search=com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/MCP_Registry-com.pexafy%2Fpexafy--mcp-8b5cf6" alt="Official MCP Registry"></a>
+  <a href="https://github.com/mcp/com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/GitHub_MCP_Registry-Pexafy-24292f?logo=github&logoColor=white" alt="GitHub MCP Registry"></a>
   <a href="https://smithery.ai/servers/pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/Smithery-pexafy%2Fpexafy--mcp-ea580c" alt="Smithery"></a>
   <a href="https://github.com/Pexafy/pexafy-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT licence"></a>
 </p>
@@ -60,14 +64,20 @@ The assistant carries on with them: the article with its photos in place, the sl
 
 | Where | How |
 |---|---|
-| **VS Code** | [Install in VS Code](https://insiders.vscode.dev/redirect/mcp/install?name=pexafy&config=%7B%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fmcp.pexafy.com%2Fmcp%22%7D), or `code --add-mcp '{"name":"pexafy","type":"http","url":"https://mcp.pexafy.com/mcp"}'` |
+| **VS Code** | [Install in VS Code](https://vscode.dev/redirect?url=vscode%3Amcp%2Fby-name%2Fcom.pexafy%2Fpexafy-mcp), or `code --add-mcp '{"name":"pexafy","type":"http","url":"https://mcp.pexafy.com/mcp"}'` |
+| **VS Code Insiders** | [Install in VS Code Insiders](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Fby-name%2Fcom.pexafy%2Fpexafy-mcp) |
+| **GitHub Copilot app** | [Install in the GitHub Copilot app](https://github.com/copilot/app/launch?open=ghapp%3A%2F%2Fmcp%2Finstall%3F%257B%2522name%2522%253A%2522pexafy%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fmcp.pexafy.com%252Fmcp%2522%257D&entry_point=dotcom_mcp-registry_install) |
+| **GitHub MCP Registry** | [Pexafy's page in the registry](https://github.com/mcp/com.pexafy/pexafy-mcp), with its install buttons |
 | **ChatGPT** | [Add Pexafy](https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy) from ChatGPT's plugin directory |
 | **Claude** | *Customize → Connectors → Add custom connector*, then `https://mcp.pexafy.com/mcp` |
 | **Claude Code** | `claude mcp add --transport http pexafy https://mcp.pexafy.com/mcp` |
+| **Codex** | `codex mcp add pexafy --url https://mcp.pexafy.com/mcp` |
+| **GitHub Copilot CLI** | `copilot mcp add --transport http pexafy https://mcp.pexafy.com/mcp` |
 | **Cursor** | [Add to Cursor](https://cursor.com/en/install-mcp?name=pexafy&config=eyJ1cmwiOiJodHRwczovL21jcC5wZXhhZnkuY29tL21jcCJ9) |
+| **Goose, Kiro, Gemini CLI, OpenCode, Cline, Zed…** | One click or one command each, on [pexafy.com/mcp](https://pexafy.com/mcp/#setup) |
 | **Any MCP client** | Streamable HTTP at `https://mcp.pexafy.com/mcp` |
 
-**Nothing to install, no API key to paste.** In VS Code, Cursor and other editors you can search right away, without an account. ChatGPT and Claude ask you to sign in to Pexafy once; a free account is enough.
+**Zero friction: nothing to install, no API key.** Most clients search right away, without an account. When you want your own account, ask the assistant to *connect my Pexafy account*: it opens Pexafy's sign-in page in your browser (OAuth), and nothing is pasted anywhere. ChatGPT and Claude ask you to sign in once; a free account is enough.
 
 ## Five tools, all read-only
 
@@ -93,4 +103,4 @@ Pexafy searches **its own index** of millions of free-to-use photographs, collec
   <a href="https://github.com/Pexafy/pexafy-mcp/blob/main/LICENSE">MIT licence</a>
 </p>
 
-<p align="center"><sub>ChatGPT, Claude, Cursor and Visual Studio Code are trademarks of their respective owners.</sub></p>
+<p align="center"><sub>ChatGPT, Claude, Codex, Cursor, GitHub Copilot and Visual Studio Code are trademarks of their respective owners.</sub></p>

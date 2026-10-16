@@ -17,7 +17,7 @@ There are no hooks, scripts or local servers: the plugin installs and runs nothi
 2. Ask for photographs. Pexafy works right away, without an account, on a small daily allowance.
 3. To search on your Pexafy account's allowance, ask the agent to connect your Pexafy account. Your agent then asks you to sign in to Pexafy in your browser and to approve a single read permission.
 
-Prefer the server alone? `https://pexafy.com/mcp/#terminal` lists the one-line command for each coding agent.
+Prefer the server alone? `https://pexafy.com/mcp/#setup` lists the one-line command for each coding agent.
 
 ## Examples
 
