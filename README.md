@@ -19,7 +19,7 @@
 <p align="center">
   <a href="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml"><img src="https://github.com/Pexafy/pexafy-mcp/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://registry.modelcontextprotocol.io/v0.1/servers?search=com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/MCP_Registry-com.pexafy%2Fpexafy--mcp-8b5cf6" alt="Official MCP Registry"></a>
-  <a href="https://github.com/mcp/com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/GitHub_MCP_Registry-Pexafy-24292f?logo=github&logoColor=white" alt="GitHub MCP Registry"></a>
+  <a href="https://github.com/mcp/com.pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/GitHub_MCP_Registry-Pexafy_Stock_Photos-24292f?logo=github&logoColor=white" alt="GitHub MCP Registry"></a>
   <a href="https://smithery.ai/servers/pexafy/pexafy-mcp"><img src="https://img.shields.io/badge/Smithery-pexafy%2Fpexafy--mcp-ea580c" alt="Smithery"></a>
   <a href="https://github.com/Pexafy/pexafy-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-22c55e" alt="MIT licence"></a>
 </p>
@@ -68,7 +68,7 @@ The assistant carries on with them: the article with its photos in place, the sl
 | **VS Code Insiders** | [Install in VS Code Insiders](https://insiders.vscode.dev/redirect?url=vscode-insiders%3Amcp%2Fby-name%2Fcom.pexafy%2Fpexafy-mcp) |
 | **GitHub Copilot app** | [Install in the GitHub Copilot app](https://github.com/copilot/app/launch?open=ghapp%3A%2F%2Fmcp%2Finstall%3F%257B%2522name%2522%253A%2522pexafy%2522%252C%2522type%2522%253A%2522http%2522%252C%2522url%2522%253A%2522https%253A%252F%252Fmcp.pexafy.com%252Fmcp%2522%257D&entry_point=dotcom_mcp-registry_install) |
 | **GitHub MCP Registry** | [Pexafy's page in the registry](https://github.com/mcp/com.pexafy/pexafy-mcp), with its install buttons |
-| **ChatGPT** | [Add Pexafy](https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy) from ChatGPT's plugin directory |
+| **ChatGPT** | [Add Pexafy Stock Photos](https://chatgpt.com/plugins/plugin_asdk_app_6a837089eb1c8191b29a0d126a54f770?search=pexafy) from ChatGPT's plugin directory |
 | **Claude** | *Customize → Connectors → Add custom connector*, then `https://mcp.pexafy.com/mcp` |
 | **Claude Code** | `claude mcp add --transport http pexafy https://mcp.pexafy.com/mcp` |
 | **Codex** | `codex mcp add pexafy --url https://mcp.pexafy.com/mcp` |
